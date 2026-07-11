@@ -81,6 +81,56 @@ def test_hpp_guard_rail_clamps_price_and_flips_to_bundling():
     assert result.discount_pct == Decimal(23)
     assert result.suggested_price == Decimal(90000)
     assert result.suggestion_type == "bundling"
+    assert "Rekomendasi disesuaikan agar tetap di atas HPP" in result.rationale_text
+
+
+def test_guard_rail_holds_for_every_rule_combination_with_zero_margin():
+    """Adversarial sweep: hpp == listed_price (zero room for any discount) across every
+    weather/calendar/density combination the rule tables can produce. suggested_price must
+    never fall below hpp, proving the guard-rail can't be bypassed by any input combination."""
+    from app.engine.weighting import DENSITY_HIGH_THRESHOLD, DENSITY_LOW_THRESHOLD, _WEATHER_RULES
+
+    listed_price = Decimal(100000)
+    hpp = listed_price  # tightest possible case: any discount_pct > 0 forces a clamp
+
+    weather_conditions = list(_WEATHER_RULES.keys()) + ["Mist"]  # + one unmapped condition
+    calendars = [
+        CalendarSignal(is_holiday=True, holiday_name="Test Holiday", is_weekend=False),
+        CalendarSignal(is_holiday=False, holiday_name=None, is_weekend=True),
+        CalendarSignal(is_holiday=False, holiday_name=None, is_weekend=False),
+    ]
+    density_counts = [0, DENSITY_LOW_THRESHOLD, DENSITY_LOW_THRESHOLD + 1, DENSITY_HIGH_THRESHOLD, DENSITY_HIGH_THRESHOLD + 10]
+
+    checked = 0
+    for condition in weather_conditions:
+        for calendar in calendars:
+            for count in density_counts:
+                result = compute_recommendation(
+                    listed_price=listed_price,
+                    hpp=hpp,
+                    weather=WeatherSignal(condition, condition.lower(), 28.0),
+                    density=DensitySignal(nearby_count=count),
+                    calendar=calendar,
+                )
+                assert result.suggested_price >= hpp, (condition, calendar, count, result.suggested_price)
+                checked += 1
+    assert checked == len(weather_conditions) * len(calendars) * len(density_counts)
+
+
+def test_build_recommendation_reclamps_even_if_caller_forgets():
+    """The persistence-layer choke point (Stage F) must re-enforce the guard-rail independently
+    of the engine, so a future algorithm that skips clamp_to_hpp still can't ship a bad price."""
+    from app.recommendation import build_recommendation
+
+    recommendation = build_recommendation(
+        service_id=1,
+        hpp=Decimal(100000),
+        suggested_price=Decimal(50000),  # adversarial: algorithm "forgot" to clamp
+        rationale_text="Cuaca: Cerah — harga diturunkan drastis.",
+        weather_snapshot_json=None,
+    )
+    assert recommendation.suggested_price == Decimal(100000)
+    assert "Rekomendasi disesuaikan agar tetap di atas HPP" in recommendation.rationale_text
 
 
 def test_holiday_lookup_is_date_exact():

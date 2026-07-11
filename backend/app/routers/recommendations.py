@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.engine.weighting import generate_recommendation
 from app.models import Recommendation, RecommendationStatus, Service
+from app.recommendation import build_recommendation
 from app.schemas import RecommendationOut, RecommendationRespond
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
@@ -31,12 +32,12 @@ def current_recommendation(service_id: int, db: Session = Depends(get_db)):
     )
     if recommendation is None:
         result = generate_recommendation(service.listed_price, service.hpp, DEFAULT_LAT, DEFAULT_LON)
-        recommendation = Recommendation(
+        recommendation = build_recommendation(
             service_id=service.id,
+            hpp=service.hpp,
             suggested_price=result.suggested_price,
             rationale_text=result.rationale_text,
             weather_snapshot_json=result.weather_snapshot_json,
-            status=RecommendationStatus.pending,
         )
         db.add(recommendation)
         db.commit()

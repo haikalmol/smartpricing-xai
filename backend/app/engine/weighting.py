@@ -188,6 +188,8 @@ def compute_recommendation(
         if dominant.points != 0
         else "Tidak ada sinyal cuaca, kalender, atau kepadatan lokasi yang signifikan hari ini; harga mengikuti acuan standar."
     )
+    if suggested_price > raw_price:  # guard-rail (CLAUDE.md non-negotiable) clamped it up to HPP
+        rationale_text = f"{rationale_text} Rekomendasi disesuaikan agar tetap di atas HPP."
 
     weather_snapshot_json = {
         "condition": weather.condition,
