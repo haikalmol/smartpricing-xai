@@ -4,7 +4,6 @@ import {
   ChevronDown,
   ChevronRight,
   Info,
-  CloudRain,
   Check,
   X,
   Search,
@@ -22,22 +21,22 @@ import {
   Edit3,
   CheckCircle,
   TrendingUp,
-  Bike,
-  Waves,
-  MapPin,
-  Home,
   Sparkles,
 } from "lucide-react";
+import {
+  fetchServices,
+  fetchCurrentRecommendation,
+  respondToRecommendation,
+  updateServiceHpp,
+  type Service,
+  type Recommendation,
+} from "./lib/api";
 
 type Tab = "saran" | "katalog" | "input" | "akun";
 
-// ─── Shared Data ─────────────────────────────────────────────────────────────
-const layananData = [
-  { nama: "Sewa Motor", harga: "Rp 100.000/hari", hpp: "50.000", hargaNum: 100000, hppNum: 50000, icon: Bike, color: "#F59E0B", colorBg: "#FFFBEB" },
-  { nama: "Paket Snorkeling", harga: "Rp 150.000/orang", hpp: "80.000", hargaNum: 150000, hppNum: 80000, icon: Waves, color: "#2563EB", colorBg: "#EFF6FF" },
-  { nama: "Guide Wisata Lokal", harga: "Rp 200.000/hari", hpp: "90.000", hargaNum: 200000, hppNum: 90000, icon: MapPin, color: "#7C3AED", colorBg: "#F5F3FF" },
-  { nama: "Kamar Homestay", harga: "Rp 250.000/malam", hpp: "120.000", hargaNum: 250000, hppNum: 120000, icon: Home, color: "#16A34A", colorBg: "#F0FDF4" },
-];
+function formatRupiah(n: number): string {
+  return Math.round(n).toLocaleString("id-ID");
+}
 
 // ─── Bottom Tab Bar ──────────────────────────────────────────────────────────
 function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -82,16 +81,103 @@ function Screen({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ─── Shared empty/error states ───────────────────────────────────────────────
+function EmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-2">
+      <Package size={32} className="text-muted-foreground opacity-40 mb-1" />
+      <p className="text-[14px] font-semibold text-foreground">{title}</p>
+      <p className="text-[12.5px] text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+      <X size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+      <p className="text-[12.5px] text-red-700 leading-snug">{message}</p>
+    </div>
+  );
+}
+
 // ─── Screen 1: Saran AI ──────────────────────────────────────────────────────
-function SaranAI({ onNavigate }: { onNavigate: (t: Tab) => void }) {
+function SaranAI({ services }: { services: Service[] }) {
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [alasanOpen, setAlasanOpen] = useState(false);
   const [decision, setDecision] = useState<"setuju" | "tolak" | null>(null);
+  const [responding, setResponding] = useState(false);
 
-  // Margin calc: harga diskon 10% dari Rp 100k = Rp 90k, HPP Rp 50k
-  const hargaDiskon = 90000;
-  const hppVal = 50000;
-  const marginPct = Math.round(((hargaDiskon - hppVal) / hppVal) * 100);
-  const barPct = Math.round(((hargaDiskon - hppVal) / hargaDiskon) * 100);
+  useEffect(() => {
+    if (services.length > 0 && selectedServiceId === null) {
+      setSelectedServiceId(services[0].id);
+    }
+  }, [services, selectedServiceId]);
+
+  const loadRecommendation = (serviceId: number) => {
+    setLoading(true);
+    setError(null);
+    fetchCurrentRecommendation(serviceId)
+      .then(setRecommendation)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (selectedServiceId !== null) {
+      setDecision(null);
+      loadRecommendation(selectedServiceId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedServiceId]);
+
+  const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
+
+  const handleRespond = (status: "approved" | "rejected") => {
+    if (!recommendation) return;
+    setResponding(true);
+    respondToRecommendation(recommendation.id, status)
+      .then(() => {
+        setDecision(status === "approved" ? "setuju" : "tolak");
+        setTimeout(() => {
+          if (selectedServiceId !== null) loadRecommendation(selectedServiceId);
+        }, 2000);
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setResponding(false));
+  };
+
+  if (services.length === 0) {
+    return (
+      <Screen>
+        <EmptyState
+          title="Belum ada layanan"
+          description="Tambahkan layanan di Katalog terlebih dahulu untuk mendapatkan rekomendasi AI."
+        />
+      </Screen>
+    );
+  }
+
+  const hargaAsli = selectedService ? Number(selectedService.listed_price) : 0;
+  const hargaSaran = recommendation ? Number(recommendation.suggested_price) : 0;
+  const hppVal = selectedService ? Number(selectedService.hpp) : 0;
+  const discountPct = hargaAsli > 0 ? Math.round(((hargaAsli - hargaSaran) / hargaAsli) * 100) : 0;
+  const marginPct = hppVal > 0 ? Math.round(((hargaSaran - hppVal) / hppVal) * 100) : 0;
+  const barPct = hargaSaran > 0 ? Math.round(((hargaSaran - hppVal) / hargaSaran) * 100) : 0;
+
+  let judul = "";
+  if (recommendation) {
+    if (hargaSaran < hargaAsli) {
+      judul = `Saran AI: Turunkan harga ${selectedService?.name} menjadi Rp ${formatRupiah(hargaSaran)} (diskon ${discountPct}%)`;
+    } else if (hargaSaran > hargaAsli) {
+      judul = `Saran AI: Harga ${selectedService?.name} disesuaikan ke Rp ${formatRupiah(hargaSaran)} agar tetap di atas HPP`;
+    } else {
+      judul = `Saran AI: Pertahankan harga ${selectedService?.name} di Rp ${formatRupiah(hargaSaran)}`;
+    }
+  }
 
   return (
     <Screen>
@@ -114,158 +200,156 @@ function SaranAI({ onNavigate }: { onNavigate: (t: Tab) => void }) {
         {/* Service Dropdown */}
         <div>
           <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Pilih Layanan</p>
-          <button className="w-full bg-card border border-border rounded-2xl px-4 py-3 flex items-center justify-between shadow-sm hover:border-primary/50 transition-colors">
-            <span className="text-[14.5px] font-semibold text-foreground">Paket Snorkeling (Rp150k/orang)</span>
-            <ChevronDown size={17} className="text-muted-foreground flex-shrink-0 ml-2" />
-          </button>
-        </div>
-
-        {/* Section Header */}
-        <div className="flex items-center gap-2 pt-1">
-          <TrendingUp size={16} className="text-primary" />
-          <h2 className="text-[14px] font-bold text-foreground">Strategi Promo Silang</h2>
-          <button className="text-muted-foreground hover:text-primary transition-colors ml-0.5" aria-label="Info">
-            <Info size={14} />
-          </button>
-        </div>
-
-        {/* AI Recommendation Card — hero */}
-        <div
-          className="bg-card rounded-2xl overflow-hidden"
-          style={{
-            boxShadow: "0 4px 24px rgba(37,99,235,0.12), 0 1px 4px rgba(0,0,0,0.06)",
-            border: "1px solid rgba(37,99,235,0.18)",
-          }}
-        >
-          {/* Blue left accent bar — 4px */}
-          <div className="flex">
-            <div className="w-1 bg-primary flex-shrink-0" style={{ background: "linear-gradient(to bottom, #2563EB, #1E40AF)" }} />
-            <div className="flex-1 p-4" style={{ background: "linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 60%)" }}>
-              {/* AI label pill */}
-              <div className="inline-flex items-center gap-1.5 bg-primary/10 rounded-full px-2.5 py-1 mb-3">
-                <BrainCircuit size={11} className="text-primary" />
-                <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Rekomendasi AI</span>
-              </div>
-
-              {/* Title */}
-              <p className="text-[15.5px] font-bold text-foreground leading-[1.45] mb-3">
-                Saran AI: Berikan Diskon 10% Sewa Motor untuk Tamu Homestay Anda
-              </p>
-
-              {/* Safety Badge */}
-              <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 mb-3">
-                <CheckCircle size={15} className="text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-[12.5px] text-green-800 leading-snug">
-                  <span className="font-bold">Aman:</span> Harga diskon 10% masih di atas HPP (Rp 50rb). Margin aman.
-                </p>
-              </div>
-
-              {/* Margin Visual Bar */}
-              <div className="mb-4 space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] text-muted-foreground font-medium">HPP (Rp 50rb)</span>
-                  <span className="text-[11px] font-bold text-green-700">Margin {marginPct}%</span>
-                  <span className="text-[11px] text-muted-foreground font-medium">Harga diskon (Rp 90rb)</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-500"
-                    style={{ width: `${barPct}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              {decision === null ? (
-                <div className="flex gap-2.5">
-                  <button
-                    onClick={() => setDecision("setuju")}
-                    className="flex-1 bg-primary text-white font-bold rounded-xl py-3 text-[14.5px] hover:bg-blue-700 active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 min-h-[48px] shadow-sm"
-                  >
-                    <Check size={16} />
-                    Setuju
-                  </button>
-                  <button
-                    onClick={() => setDecision("tolak")}
-                    className="flex-1 border-2 border-slate-200 text-slate-500 font-bold rounded-xl py-3 text-[14.5px] hover:bg-slate-50 active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 min-h-[48px]"
-                  >
-                    <X size={16} />
-                    Tolak
-                  </button>
-                </div>
-              ) : (
-                <div className={`rounded-xl px-3.5 py-3 flex items-center gap-2.5 ${decision === "setuju" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-                  {decision === "setuju" ? (
-                    <>
-                      <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <Check size={14} className="text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-green-800 font-bold text-[13px]">Promo disetujui dan aktif!</p>
-                        <p className="text-green-600 text-[11px]">Diskon 10% berlaku untuk tamu homestay</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <X size={14} className="text-red-500" />
-                      </div>
-                      <div>
-                        <p className="text-red-700 font-bold text-[13px]">Rekomendasi ditolak.</p>
-                        <p className="text-red-400 text-[11px]">Harga tetap seperti semula</p>
-                      </div>
-                    </>
-                  )}
-                  <button
-                    onClick={() => setDecision(null)}
-                    className="ml-auto text-[11px] text-muted-foreground underline flex-shrink-0"
-                  >
-                    Ubah
-                  </button>
-                </div>
-              )}
-            </div>
+          <div className="relative">
+            <select
+              value={selectedServiceId ?? ""}
+              onChange={(e) => setSelectedServiceId(Number(e.target.value))}
+              className="w-full bg-card border border-border rounded-2xl px-4 py-3 text-[14.5px] font-semibold text-foreground appearance-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-10"
+            >
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} (Rp{formatRupiah(Number(s.listed_price))})
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={17} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           </div>
         </div>
 
-        {/* Alasan Algoritma — Collapsible */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-          <button
-            onClick={() => setAlasanOpen(!alasanOpen)}
-            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-muted/40 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Info size={15} className="text-muted-foreground" />
-              <span className="text-[13.5px] font-bold text-foreground">Alasan Algoritma</span>
-            </div>
-            <ChevronDown
-              size={16}
-              className={`text-muted-foreground transition-transform duration-200 ${alasanOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          {alasanOpen && (
-            <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CloudRain size={13} className="text-blue-600" />
-                </div>
-                <p className="text-[13px] text-foreground leading-snug">
-                  <span className="font-semibold">Cuaca: Mendung</span> — wisata diprediksi ramai akhir pekan ini.
-                </p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <TrendingUp size={13} className="text-amber-600" />
-                </div>
-                <p className="text-[13px] text-foreground leading-snug">
-                  Tingkat bundel layanan serupa naik <span className="font-semibold">23%</span> 2 minggu terakhir.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        {error && <ErrorBanner message={error} />}
 
-        {/* breathing room above nav */}
+        {loading && (
+          <p className="text-[13px] text-muted-foreground text-center py-6">Memuat rekomendasi...</p>
+        )}
+
+        {!loading && recommendation && selectedService && (
+          <>
+            {/* Section Header */}
+            <div className="flex items-center gap-2 pt-1">
+              <TrendingUp size={16} className="text-primary" />
+              <h2 className="text-[14px] font-bold text-foreground">Strategi Promo Silang</h2>
+              <button className="text-muted-foreground hover:text-primary transition-colors ml-0.5" aria-label="Info">
+                <Info size={14} />
+              </button>
+            </div>
+
+            {/* AI Recommendation Card — hero */}
+            <div
+              className="bg-card rounded-2xl overflow-hidden"
+              style={{
+                boxShadow: "0 4px 24px rgba(37,99,235,0.12), 0 1px 4px rgba(0,0,0,0.06)",
+                border: "1px solid rgba(37,99,235,0.18)",
+              }}
+            >
+              <div className="flex">
+                <div className="w-1 bg-primary flex-shrink-0" style={{ background: "linear-gradient(to bottom, #2563EB, #1E40AF)" }} />
+                <div className="flex-1 p-4" style={{ background: "linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 60%)" }}>
+                  <div className="inline-flex items-center gap-1.5 bg-primary/10 rounded-full px-2.5 py-1 mb-3">
+                    <BrainCircuit size={11} className="text-primary" />
+                    <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Rekomendasi AI</span>
+                  </div>
+
+                  <p className="text-[15.5px] font-bold text-foreground leading-[1.45] mb-3">{judul}</p>
+
+                  <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 mb-3">
+                    <CheckCircle size={15} className="text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-[12.5px] text-green-800 leading-snug">
+                      <span className="font-bold">Aman:</span> Harga rekomendasi (Rp {formatRupiah(hargaSaran)}) tetap di atas HPP (Rp {formatRupiah(hppVal)}).
+                    </p>
+                  </div>
+
+                  <div className="mb-4 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-muted-foreground font-medium">HPP (Rp {formatRupiah(hppVal)})</span>
+                      <span className="text-[11px] font-bold text-green-700">Margin {marginPct}%</span>
+                      <span className="text-[11px] text-muted-foreground font-medium">Harga saran (Rp {formatRupiah(hargaSaran)})</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-500"
+                        style={{ width: `${Math.max(0, Math.min(100, barPct))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  {decision === null ? (
+                    <div className="flex gap-2.5">
+                      <button
+                        onClick={() => handleRespond("approved")}
+                        disabled={responding}
+                        className="flex-1 bg-primary text-white font-bold rounded-xl py-3 text-[14.5px] hover:bg-blue-700 active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 min-h-[48px] shadow-sm disabled:opacity-60"
+                      >
+                        <Check size={16} />
+                        Setuju
+                      </button>
+                      <button
+                        onClick={() => handleRespond("rejected")}
+                        disabled={responding}
+                        className="flex-1 border-2 border-slate-200 text-slate-500 font-bold rounded-xl py-3 text-[14.5px] hover:bg-slate-50 active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 min-h-[48px] disabled:opacity-60"
+                      >
+                        <X size={16} />
+                        Tolak
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`rounded-xl px-3.5 py-3 flex items-center gap-2.5 ${decision === "setuju" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                      {decision === "setuju" ? (
+                        <>
+                          <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <Check size={14} className="text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-green-800 font-bold text-[13px]">Rekomendasi disetujui!</p>
+                            <p className="text-green-600 text-[11px]">Memuat rekomendasi berikutnya...</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <X size={14} className="text-red-500" />
+                          </div>
+                          <div>
+                            <p className="text-red-700 font-bold text-[13px]">Rekomendasi ditolak.</p>
+                            <p className="text-red-400 text-[11px]">Memuat rekomendasi berikutnya...</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Alasan Algoritma — Collapsible */}
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+              <button
+                onClick={() => setAlasanOpen(!alasanOpen)}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-muted/40 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Info size={15} className="text-muted-foreground" />
+                  <span className="text-[13.5px] font-bold text-foreground">Alasan Algoritma</span>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-muted-foreground transition-transform duration-200 ${alasanOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {alasanOpen && (
+                <div className="px-4 pb-4 border-t border-border pt-3">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Info size={13} className="text-blue-600" />
+                    </div>
+                    <p className="text-[13px] text-foreground leading-snug">{recommendation.rationale_text}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         <div className="h-2" />
       </div>
     </Screen>
@@ -273,10 +357,20 @@ function SaranAI({ onNavigate }: { onNavigate: (t: Tab) => void }) {
 }
 
 // ─── Screen 2: Katalog ───────────────────────────────────────────────────────
-function Katalog({ onNavigate }: { onNavigate: (t: Tab) => void }) {
+function Katalog({
+  services,
+  loading,
+  error,
+  onNavigate,
+}: {
+  services: Service[];
+  loading: boolean;
+  error: string | null;
+  onNavigate: (t: Tab) => void;
+}) {
   const [query, setQuery] = useState("");
-  const filtered = layananData.filter((l) =>
-    l.nama.toLowerCase().includes(query.toLowerCase())
+  const filtered = services.filter((s) =>
+    s.name.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -290,6 +384,8 @@ function Katalog({ onNavigate }: { onNavigate: (t: Tab) => void }) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3">
+        {error && <ErrorBanner message={error} />}
+
         {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -302,63 +398,64 @@ function Katalog({ onNavigate }: { onNavigate: (t: Tab) => void }) {
           />
         </div>
 
-        {/* Count label */}
-        <p className="text-[11px] font-semibold text-muted-foreground px-0.5">
-          {filtered.length} layanan tersedia
-        </p>
+        {loading ? (
+          <p className="text-[13px] text-muted-foreground text-center py-10">Memuat layanan...</p>
+        ) : (
+          <>
+            <p className="text-[11px] font-semibold text-muted-foreground px-0.5">
+              {filtered.length} layanan tersedia
+            </p>
 
-        {/* Cards */}
-        <div className="space-y-3">
-          {filtered.map((l, i) => {
-            const Icon = l.icon;
-            const marginPct = Math.round(((l.hargaNum - l.hppNum) / l.hppNum) * 100);
-            return (
-              <div
-                key={i}
-                className="bg-card border border-border rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3.5"
-                style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.06)" }}
-              >
-                {/* Service icon */}
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: l.colorBg }}
-                >
-                  <Icon size={18} style={{ color: l.color }} />
-                </div>
+            <div className="space-y-3">
+              {filtered.map((s) => {
+                const hargaNum = Number(s.listed_price);
+                const hppNum = Number(s.hpp);
+                const marginPct = hppNum > 0 ? Math.round(((hargaNum - hppNum) / hppNum) * 100) : 0;
+                return (
+                  <div
+                    key={s.id}
+                    className="bg-card border border-border rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3.5"
+                    style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.06)" }}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50">
+                      <Package size={18} className="text-primary" />
+                    </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14.5px] font-bold text-foreground leading-tight">{l.nama}</p>
-                  <p className="text-[13px] text-foreground font-semibold mt-0.5">{l.harga}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <button
-                      onClick={() => onNavigate("input")}
-                      className="text-[11px] text-primary font-bold hover:underline"
-                    >
-                      Lihat HPP
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14.5px] font-bold text-foreground leading-tight">{s.name}</p>
+                      <p className="text-[13px] text-foreground font-semibold mt-0.5">Rp {formatRupiah(hargaNum)}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <button
+                          onClick={() => onNavigate("input")}
+                          className="text-[11px] text-primary font-bold hover:underline"
+                        >
+                          Lihat HPP
+                        </button>
+                        <span className="text-[11px] text-green-700 font-semibold bg-green-50 px-1.5 py-0.5 rounded-md">
+                          Margin {marginPct}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <button className="border border-slate-200 text-slate-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-muted active:scale-95 transition-all flex items-center gap-1.5 min-h-[38px] flex-shrink-0">
+                      <Edit3 size={12} />
+                      Edit
                     </button>
-                    <span className="text-[11px] text-green-700 font-semibold bg-green-50 px-1.5 py-0.5 rounded-md">
-                      Margin {marginPct}%
-                    </span>
                   </div>
+                );
+              })}
+
+              {filtered.length === 0 && (
+                <div className="text-center py-10">
+                  <Search size={32} className="text-muted-foreground mx-auto mb-2 opacity-40" />
+                  <p className="text-muted-foreground text-[14px]">
+                    {services.length === 0 ? "Belum ada layanan." : "Tidak ada layanan ditemukan."}
+                  </p>
                 </div>
-
-                {/* Edit */}
-                <button className="border border-slate-200 text-slate-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-muted active:scale-95 transition-all flex items-center gap-1.5 min-h-[38px] flex-shrink-0">
-                  <Edit3 size={12} />
-                  Edit
-                </button>
-              </div>
-            );
-          })}
-
-          {filtered.length === 0 && (
-            <div className="text-center py-10">
-              <Search size={32} className="text-muted-foreground mx-auto mb-2 opacity-40" />
-              <p className="text-muted-foreground text-[14px]">Tidak ada layanan ditemukan.</p>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
         <div className="h-2" />
       </div>
     </Screen>
@@ -366,22 +463,65 @@ function Katalog({ onNavigate }: { onNavigate: (t: Tab) => void }) {
 }
 
 // ─── Screen 3: Input HPP ─────────────────────────────────────────────────────
-function InputHPP({ onNavigate }: { onNavigate: (t: Tab) => void }) {
-  const [layanan, setLayanan] = useState("Sewa Motor");
-  const [hargaNormal, setHargaNormal] = useState("100.000");
-  const [hpp, setHpp] = useState("50.000");
+function InputHPP({
+  services,
+  onSaved,
+  onNavigate,
+}: {
+  services: Service[];
+  onSaved: () => void;
+  onNavigate: (t: Tab) => void;
+}) {
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [hpp, setHpp] = useState("");
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedLayanan = layananData.find((l) => l.nama === layanan);
-  const hargaNum = parseInt(hargaNormal.replace(/\./g, "")) || 0;
-  const hppNum = parseInt(hpp.replace(/\./g, "")) || 0;
+  useEffect(() => {
+    if (services.length > 0 && selectedServiceId === null) {
+      setSelectedServiceId(services[0].id);
+    }
+  }, [services, selectedServiceId]);
+
+  const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
+
+  useEffect(() => {
+    if (selectedService) {
+      setHpp(formatRupiah(Number(selectedService.hpp)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService?.id, selectedService?.hpp]);
+
+  const hargaNum = selectedService ? Number(selectedService.listed_price) : 0;
+  const hppNum = parseInt(hpp.replace(/\./g, ""), 10) || 0;
   const marginPct = hargaNum > 0 && hppNum > 0 ? Math.round(((hargaNum - hppNum) / hargaNum) * 100) : 0;
   const isSafe = hppNum < hargaNum;
 
   const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (!selectedService || hppNum <= 0 || saving) return;
+    setSaving(true);
+    setError(null);
+    updateServiceHpp(selectedService.id, hppNum)
+      .then(() => {
+        setSaved(true);
+        onSaved();
+        setTimeout(() => setSaved(false), 2500);
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setSaving(false));
   };
+
+  if (services.length === 0) {
+    return (
+      <Screen>
+        <EmptyState
+          title="Belum ada layanan"
+          description="Tambahkan layanan di Katalog terlebih dahulu untuk mengatur HPP."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -399,7 +539,8 @@ function InputHPP({ onNavigate }: { onNavigate: (t: Tab) => void }) {
         </h1>
         <button
           onClick={handleSave}
-          className="w-10 h-10 rounded-full hover:bg-muted transition-colors flex items-center justify-center flex-shrink-0"
+          disabled={saving}
+          className="w-10 h-10 rounded-full hover:bg-muted transition-colors flex items-center justify-center flex-shrink-0 disabled:opacity-60"
           aria-label="Simpan"
         >
           <Save size={19} className={saved ? "text-green-600" : "text-foreground"} />
@@ -407,6 +548,8 @@ function InputHPP({ onNavigate }: { onNavigate: (t: Tab) => void }) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {error && <ErrorBanner message={error} />}
+
         {/* Info Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
           <Info size={16} className="text-primary flex-shrink-0 mt-0.5" />
@@ -422,34 +565,32 @@ function InputHPP({ onNavigate }: { onNavigate: (t: Tab) => void }) {
           </label>
           <div className="relative">
             <select
-              value={layanan}
-              onChange={(e) => setLayanan(e.target.value)}
+              value={selectedServiceId ?? ""}
+              onChange={(e) => setSelectedServiceId(Number(e.target.value))}
               className="w-full bg-card border border-border rounded-2xl px-4 py-3.5 text-[14.5px] font-semibold text-foreground appearance-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-10"
             >
-              {layananData.map((l) => (
-                <option key={l.nama} value={l.nama}>{l.nama}</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
             <ChevronDown size={17} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           </div>
         </div>
 
-        {/* Harga Normal */}
+        {/* Harga Normal — read-only, no PUT endpoint for listed_price yet */}
         <div>
           <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
             Harga Normal Saat Ini
           </label>
-          <div className="flex items-center bg-card border border-border rounded-2xl overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+          <div className="flex items-center bg-muted/50 border border-border rounded-2xl overflow-hidden">
             <span className="px-4 py-3.5 text-[14px] font-bold text-muted-foreground border-r border-border bg-muted/50 min-w-[52px] text-center flex-shrink-0">
               Rp
             </span>
             <input
-              value={hargaNormal}
-              onChange={(e) => setHargaNormal(e.target.value)}
-              type="text"
-              inputMode="numeric"
+              value={formatRupiah(hargaNum)}
+              readOnly
+              disabled
               className="flex-1 px-4 py-3.5 text-[15px] font-semibold text-foreground bg-transparent focus:outline-none"
-              placeholder="0"
             />
           </div>
         </div>
@@ -504,7 +645,8 @@ function InputHPP({ onNavigate }: { onNavigate: (t: Tab) => void }) {
         {/* Save Button */}
         <button
           onClick={handleSave}
-          className={`w-full font-bold rounded-2xl py-4 text-[15.5px] transition-all flex items-center justify-center gap-2 min-h-[54px] active:scale-[0.98] shadow-sm ${
+          disabled={saving}
+          className={`w-full font-bold rounded-2xl py-4 text-[15.5px] transition-all flex items-center justify-center gap-2 min-h-[54px] active:scale-[0.98] shadow-sm disabled:opacity-60 ${
             saved
               ? "bg-green-600 text-white"
               : "bg-primary text-white hover:bg-blue-700"
@@ -514,7 +656,7 @@ function InputHPP({ onNavigate }: { onNavigate: (t: Tab) => void }) {
           {saved ? (
             <><Check size={18} />Data Tersimpan!</>
           ) : (
-            <><Save size={18} />Simpan Data HPP</>
+            <><Save size={18} />{saving ? "Menyimpan..." : "Simpan Data HPP"}</>
           )}
         </button>
 
@@ -640,6 +782,21 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("saran");
   const [prevTab, setPrevTab] = useState<Tab>("saran");
 
+  const [services, setServices] = useState<Service[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [servicesError, setServicesError] = useState<string | null>(null);
+
+  const loadServices = () => {
+    setServicesLoading(true);
+    setServicesError(null);
+    fetchServices()
+      .then(setServices)
+      .catch((err: Error) => setServicesError(err.message))
+      .finally(() => setServicesLoading(false));
+  };
+
+  useEffect(() => { loadServices(); }, []);
+
   const handleNavigate = (t: Tab) => {
     setPrevTab(activeTab);
     setActiveTab(t);
@@ -648,9 +805,9 @@ export default function App() {
   const showBottomNav = activeTab !== "input";
 
   const screens: Record<Tab, React.ReactNode> = {
-    saran:   <SaranAI onNavigate={handleNavigate} />,
-    katalog: <Katalog onNavigate={handleNavigate} />,
-    input:   <InputHPP onNavigate={handleNavigate} />,
+    saran:   <SaranAI services={services} />,
+    katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onNavigate={handleNavigate} />,
+    input:   <InputHPP services={services} onSaved={loadServices} onNavigate={handleNavigate} />,
     akun:    <Akun onNavigate={handleNavigate} />,
   };
 
