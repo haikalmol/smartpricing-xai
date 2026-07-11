@@ -115,8 +115,32 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+function FetchErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-3">
+      <X size={32} className="text-red-400 opacity-70 mb-1" />
+      <p className="text-[14px] font-semibold text-foreground">Layanan belum tersedia</p>
+      <p className="text-[12.5px] text-muted-foreground">Tidak dapat terhubung ke server. Coba lagi dalam beberapa saat.</p>
+      <button
+        onClick={onRetry}
+        className="mt-1 bg-primary text-white text-[13px] font-bold rounded-xl px-4 py-2.5 hover:bg-blue-700 active:scale-95 transition-all"
+      >
+        Coba Lagi
+      </button>
+    </div>
+  );
+}
+
 // ─── Screen 1: Saran AI ──────────────────────────────────────────────────────
-function SaranAI({ services }: { services: Service[] }) {
+function SaranAI({
+  services,
+  servicesError,
+  onRetryServices,
+}: {
+  services: Service[];
+  servicesError: string | null;
+  onRetryServices: () => void;
+}) {
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(false);
@@ -167,10 +191,14 @@ function SaranAI({ services }: { services: Service[] }) {
   if (services.length === 0) {
     return (
       <Screen>
-        <EmptyState
-          title="Belum ada layanan"
-          description="Tambahkan layanan di Katalog terlebih dahulu untuk mendapatkan rekomendasi AI."
-        />
+        {servicesError ? (
+          <FetchErrorState onRetry={onRetryServices} />
+        ) : (
+          <EmptyState
+            title="Belum ada layanan"
+            description="Tambahkan layanan di Katalog terlebih dahulu untuk mendapatkan rekomendasi AI."
+          />
+        )}
       </Screen>
     );
   }
@@ -375,11 +403,13 @@ function Katalog({
   services,
   loading,
   error,
+  onRetry,
   onNavigate,
 }: {
   services: Service[];
   loading: boolean;
   error: string | null;
+  onRetry: () => void;
   onNavigate: (t: Tab) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -397,6 +427,9 @@ function Katalog({
         </button>
       </header>
 
+      {error && services.length === 0 && !loading ? (
+        <FetchErrorState onRetry={onRetry} />
+      ) : (
       <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3">
         {error && <ErrorBanner message={error} />}
 
@@ -472,6 +505,7 @@ function Katalog({
         )}
         <div className="h-2" />
       </div>
+      )}
     </Screen>
   );
 }
@@ -479,10 +513,14 @@ function Katalog({
 // ─── Screen 3: Input HPP ─────────────────────────────────────────────────────
 function InputHPP({
   services,
+  servicesError,
+  onRetryServices,
   onSaved,
   onNavigate,
 }: {
   services: Service[];
+  servicesError: string | null;
+  onRetryServices: () => void;
   onSaved: () => void;
   onNavigate: (t: Tab) => void;
 }) {
@@ -526,20 +564,12 @@ function InputHPP({
       .finally(() => setSaving(false));
   };
 
-  if (services.length === 0) {
-    return (
-      <Screen>
-        <EmptyState
-          title="Belum ada layanan"
-          description="Tambahkan layanan di Katalog terlebih dahulu untuk mengatur HPP."
-        />
-      </Screen>
-    );
-  }
+  const noServices = services.length === 0;
 
   return (
     <Screen>
-      {/* Header */}
+      {/* Header — always rendered, even when empty/erroring, since this screen hides the
+          bottom nav and relies on this back button as the only way out. */}
       <header className="bg-card border-b border-border px-2 py-2.5 flex items-center gap-1 flex-shrink-0">
         <button
           onClick={() => onNavigate("katalog")}
@@ -553,7 +583,7 @@ function InputHPP({
         </h1>
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || noServices}
           className="w-10 h-10 rounded-full hover:bg-muted transition-colors flex items-center justify-center flex-shrink-0 disabled:opacity-60"
           aria-label="Simpan"
         >
@@ -561,6 +591,16 @@ function InputHPP({
         </button>
       </header>
 
+      {noServices ? (
+        servicesError ? (
+          <FetchErrorState onRetry={onRetryServices} />
+        ) : (
+          <EmptyState
+            title="Belum ada layanan"
+            description="Tambahkan layanan di Katalog terlebih dahulu untuk mengatur HPP."
+          />
+        )
+      ) : (
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {error && <ErrorBanner message={error} />}
 
@@ -676,6 +716,7 @@ function InputHPP({
 
         <div className="h-2" />
       </div>
+      )}
     </Screen>
   );
 }
@@ -819,74 +860,24 @@ export default function App() {
   const showBottomNav = activeTab !== "input";
 
   const screens: Record<Tab, React.ReactNode> = {
-    saran:   <SaranAI services={services} />,
-    katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onNavigate={handleNavigate} />,
-    input:   <InputHPP services={services} onSaved={loadServices} onNavigate={handleNavigate} />,
+    saran:   <SaranAI services={services} servicesError={servicesError} onRetryServices={loadServices} />,
+    katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onRetry={loadServices} onNavigate={handleNavigate} />,
+    input:   <InputHPP services={services} servicesError={servicesError} onRetryServices={loadServices} onSaved={loadServices} onNavigate={handleNavigate} />,
     akun:    <Akun onNavigate={handleNavigate} />,
   };
 
+  // The real app IS a plain responsive page — the user's own mobile browser is the
+  // frame. No fake device bezel / fake browser chrome on top of it.
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: "linear-gradient(145deg, #CBD5E1 0%, #94A3B8 100%)" }}
+      key={activeTab}
+      className="min-h-screen w-full max-w-[420px] mx-auto flex flex-col bg-background"
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
-      {/* Device frame */}
-      <div
-        className="relative flex flex-col"
-        style={{
-          width: "360px",
-          height: "780px",
-          borderRadius: "2rem",
-          background: "#1E293B",
-          padding: "3px",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)",
-        }}
-      >
-        {/* Screen area */}
-        <div
-          className="flex flex-col overflow-hidden flex-1"
-          style={{ borderRadius: "1.75rem", background: "#F8FAFC" }}
-        >
-          {/* Android Chrome browser bar */}
-          <div
-            className="flex items-center gap-2 px-3 py-2 flex-shrink-0"
-            style={{ background: "#3C4043" }}
-          >
-            {/* Tab indicator */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <div className="text-[10px] text-slate-300 font-medium bg-slate-600 px-1.5 py-0.5 rounded">1</div>
-            </div>
-            {/* URL bar */}
-            <div
-              className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] text-slate-300"
-              style={{ background: "#5F6368" }}
-            >
-              <div className="w-2.5 h-2.5 rounded-full border border-green-400 flex items-center justify-center flex-shrink-0">
-                <div className="w-1 h-1 rounded-full bg-green-400" />
-              </div>
-              <span className="font-medium truncate">smartpricing.id</span>
-            </div>
-            {/* Menu dots */}
-            <div className="flex flex-col gap-[3px] flex-shrink-0 px-1">
-              {[0,1,2].map(i => <div key={i} className="w-1 h-1 rounded-full bg-slate-400" />)}
-            </div>
-          </div>
-
-          {/* Screen content */}
-          <div
-            key={activeTab}
-            className="flex flex-col flex-1 min-h-0"
-            style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-          >
-            {screens[activeTab]}
-          </div>
-
-          {/* Bottom nav — inside screen, outside scroll */}
-          {showBottomNav && (
-            <BottomNav active={activeTab} onChange={handleNavigate} />
-          )}
-        </div>
-      </div>
+      {screens[activeTab]}
+      {showBottomNav && (
+        <BottomNav active={activeTab} onChange={handleNavigate} />
+      )}
     </div>
   );
 }

@@ -23,10 +23,18 @@ export interface Recommendation {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      headers: { "Content-Type": "application/json" },
+      ...init,
+    });
+  } catch {
+    // fetch() itself rejected: backend unreachable (down, cold-starting on a free
+    // tier, CORS blocked, DNS/network failure). Never surface the raw browser
+    // TypeError ("Failed to fetch") to a merchant.
+    throw new Error("Layanan belum tersedia, coba lagi.");
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`${init?.method ?? "GET"} ${path} gagal: ${res.status} ${body}`);
