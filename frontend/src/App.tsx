@@ -38,6 +38,20 @@ function formatRupiah(n: number): string {
   return Math.round(n).toLocaleString("id-ID");
 }
 
+// Abbreviated form ("150rb", "1.2jt") for tight single-row layouts where two
+// full "Rp 150.000"-style values plus a label can overflow the 360px mobile frame.
+function formatRupiahCompact(n: number): string {
+  const rounded = Math.round(n);
+  if (rounded >= 1_000_000) {
+    const jt = rounded / 1_000_000;
+    return `${Number.isInteger(jt) ? jt : jt.toFixed(1)}jt`;
+  }
+  if (rounded >= 1_000) {
+    return `${Math.round(rounded / 1_000)}rb`;
+  }
+  return String(rounded);
+}
+
 // ─── Bottom Tab Bar ──────────────────────────────────────────────────────────
 function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -260,9 +274,9 @@ function SaranAI({ services }: { services: Service[] }) {
 
                   <div className="mb-4 space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-muted-foreground font-medium">HPP (Rp {formatRupiah(hppVal)})</span>
+                      <span className="text-[11px] text-muted-foreground font-medium">HPP (Rp {formatRupiahCompact(hppVal)})</span>
                       <span className="text-[11px] font-bold text-green-700">Margin {marginPct}%</span>
-                      <span className="text-[11px] text-muted-foreground font-medium">Harga saran (Rp {formatRupiah(hargaSaran)})</span>
+                      <span className="text-[11px] text-muted-foreground font-medium">Harga saran (Rp {formatRupiahCompact(hargaSaran)})</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
