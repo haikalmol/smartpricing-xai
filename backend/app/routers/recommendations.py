@@ -4,11 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.engine.weighting import generate_recommendation
 from app.models import Recommendation, RecommendationStatus, Service
-from app.recommendation import generate_stub_recommendation
 from app.schemas import RecommendationOut, RecommendationRespond
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
+
+# TODO: merchant.location (CLAUDE.md data model) is free text, no lat/lon yet.
+# Using a fixed Banda Aceh centroid until geocoding (Geoapify) or dedicated
+# lat/lon columns are added to merchant.
+DEFAULT_LAT = 5.5483
+DEFAULT_LON = 95.3238
 
 
 @router.get("/current", response_model=RecommendationOut)
@@ -24,12 +30,13 @@ def current_recommendation(service_id: int, db: Session = Depends(get_db)):
         .first()
     )
     if recommendation is None:
-        suggested_price, rationale_text, weather_snapshot = generate_stub_recommendation(service)
+        result = generate_recommendation(service.listed_price, service.hpp, DEFAULT_LAT, DEFAULT_LON)
         recommendation = Recommendation(
             service_id=service.id,
-            suggested_price=suggested_price,
-            rationale_text=rationale_text,
-            weather_snapshot_json=weather_snapshot,
+            suggested_price=result.suggested_price,
+            rationale_text=result.rationale_text,
+            weather_snapshot_json=result.weather_snapshot_json,
+            status=RecommendationStatus.pending,
         )
         db.add(recommendation)
         db.commit()
