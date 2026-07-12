@@ -17,11 +17,10 @@ from decimal import Decimal
 from typing import Optional
 
 import requests
-from dotenv import load_dotenv
 
+# app.recommendation -> app.models -> app.database, which loads .env at import
+# time (see app/database.py) -- no need to load it again here.
 from app.recommendation import clamp_to_hpp
-
-load_dotenv()
 
 BASE_DISCOUNT_PCT = Decimal(5)
 MIN_DISCOUNT_PCT = Decimal(0)
