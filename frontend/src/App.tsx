@@ -40,6 +40,7 @@ import {
   type PendingRecommendation,
   type Merchant,
 } from "./lib/api";
+import termsRaw from "../../syaratketentuan.md?raw";
 
 type Tab = "saran" | "katalog" | "input" | "akun";
 
@@ -992,6 +993,63 @@ function HelpScreen({ onBack }: { onBack: () => void }) {
 }
 
 // ─── Syarat & Ketentuan ──────────────────────────────────────────────────────
+// Extracts numbered "## " sections from syaratketentuan.md, skipping the top
+// meta-commentary block and the trailing "*[...]*" editorial note -- both are
+// notes to the developer (drafting context, "fill in contact info before
+// launch"), never meant to render as merchant-facing terms text.
+function parseTermsSections(markdown: string): { title: string; body: string[] }[] {
+  const sections: { title: string; body: string[] }[] = [];
+  let current: { title: string; body: string[] } | null = null;
+
+  for (const rawLine of markdown.split("\n")) {
+    if (rawLine.startsWith("## ")) {
+      if (current) sections.push(current);
+      current = { title: rawLine.slice(3).trim(), body: [] };
+    } else if (current && rawLine.trim() !== "---" && !rawLine.trim().startsWith("*[")) {
+      current.body.push(rawLine);
+    }
+  }
+  if (current) sections.push(current);
+  return sections;
+}
+
+type TermsBlock = { type: "p" | "ul"; items: string[] };
+
+function renderTermsBody(lines: string[]): TermsBlock[] {
+  const blocks: TermsBlock[] = [];
+  let mode: "none" | "p" | "ul" = "none";
+  let paraBuf: string[] = [];
+  let listItems: string[] = [];
+
+  const flush = () => {
+    if (mode === "p" && paraBuf.length > 0) blocks.push({ type: "p", items: [paraBuf.join(" ")] });
+    if (mode === "ul" && listItems.length > 0) blocks.push({ type: "ul", items: listItems });
+    paraBuf = [];
+    listItems = [];
+    mode = "none";
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line === "") {
+      flush();
+    } else if (line.startsWith("- ")) {
+      if (mode !== "ul") { flush(); mode = "ul"; }
+      listItems.push(line.slice(2).trim());
+    } else if (mode === "ul") {
+      // wrapped continuation of the previous list item
+      listItems[listItems.length - 1] += ` ${line}`;
+    } else {
+      if (mode !== "p") { flush(); mode = "p"; }
+      paraBuf.push(line);
+    }
+  }
+  flush();
+  return blocks;
+}
+
+const TERMS_SECTIONS = parseTermsSections(termsRaw);
+
 function TermsScreen({ onBack }: { onBack: () => void }) {
   return (
     <Screen>
@@ -1004,21 +1062,25 @@ function TermsScreen({ onBack }: { onBack: () => void }) {
             diperbarui sebelum peluncuran resmi.
           </p>
         </div>
-        <div className="bg-card border border-border rounded-2xl px-4 py-3.5 shadow-sm space-y-3">
-          <p className="text-[13px] text-foreground leading-snug">
-            SmartPricing XAI adalah alat bantu rekomendasi harga untuk UMKM pariwisata. Rekomendasi yang
-            ditampilkan bersifat saran, bukan kewajiban — setiap perubahan harga tetap memerlukan persetujuan
-            Anda melalui tombol Setuju/Tolak.
-          </p>
-          <p className="text-[13px] text-foreground leading-snug">
-            Data layanan, HPP, dan keputusan yang Anda buat disimpan untuk keperluan penelitian dan peningkatan
-            sistem ini, sesuai tujuan hibah PKM yang mendanai pengembangan aplikasi.
-          </p>
-          <p className="text-[13px] text-foreground leading-snug">
-            Anda dapat menghapus layanan kapan pun melalui halaman Katalog. Untuk pertanyaan lebih lanjut,
-            hubungi tim pengembang melalui kontak yang tersedia di kampus Universitas Muhammadiyah Aceh.
-          </p>
-        </div>
+        {TERMS_SECTIONS.map((section) => (
+          <div
+            key={section.title}
+            className="bg-card border border-border rounded-2xl px-4 py-3.5 shadow-sm space-y-2.5"
+          >
+            <p className="text-[13.5px] font-bold text-foreground">{section.title}</p>
+            {renderTermsBody(section.body).map((block, i) =>
+              block.type === "ul" ? (
+                <ul key={i} className="list-disc pl-4 space-y-1.5">
+                  {block.items.map((item, j) => (
+                    <li key={j} className="text-[13px] text-foreground leading-snug">{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={i} className="text-[13px] text-foreground leading-snug">{block.items[0]}</p>
+              )
+            )}
+          </div>
+        ))}
         <div className="h-2" />
       </div>
     </Screen>
