@@ -14,6 +14,12 @@ class Merchant(Base):
     name = Column(String, nullable=False)
     business_name = Column(String, nullable=False)
     location = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    # Soft-delete: mirrors Service.is_active. Deleting an account preserves
+    # logged recommendation/approve-reject history (CLAUDE.md non-negotiable
+    # for Paper A) instead of cascading a hard delete through it.
+    is_active = Column(Boolean, nullable=False, default=True)
 
     services = relationship("Service", back_populates="merchant")
 

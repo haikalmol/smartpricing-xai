@@ -3,9 +3,10 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_merchant
 from app.database import get_db
 from app.engine.weighting import generate_recommendation
-from app.models import Recommendation, RecommendationStatus, Service
+from app.models import Merchant, Recommendation, RecommendationStatus, Service
 from app.recommendation import build_recommendation
 from app.schemas import PendingRecommendationOut, RecommendationOut, RecommendationRespond
 
@@ -19,9 +20,13 @@ DEFAULT_LON = 95.3238
 
 
 @router.get("/current", response_model=RecommendationOut)
-def current_recommendation(service_id: int, db: Session = Depends(get_db)):
+def current_recommendation(
+    service_id: int,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db),
+):
     service = db.get(Service, service_id)
-    if service is None:
+    if service is None or service.merchant_id != current_merchant.id:
         raise HTTPException(status_code=404, detail="Layanan tidak ditemukan")
 
     recommendation = (
@@ -46,7 +51,10 @@ def current_recommendation(service_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/pending", response_model=list[PendingRecommendationOut])
-def list_pending_recommendations(merchant_id: int, db: Session = Depends(get_db)):
+def list_pending_recommendations(
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db),
+):
     # Read-only: lists recommendations that already exist. Deliberately does NOT
     # call generate_recommendation for services that don't have one yet -- unlike
     # /current, this can be polled for a notification badge without silently
@@ -55,7 +63,7 @@ def list_pending_recommendations(merchant_id: int, db: Session = Depends(get_db)
         db.query(Recommendation, Service.name)
         .join(Service, Recommendation.service_id == Service.id)
         .filter(
-            Service.merchant_id == merchant_id,
+            Service.merchant_id == current_merchant.id,
             Service.is_active.is_(True),
             Recommendation.status == RecommendationStatus.pending,
         )
@@ -76,8 +84,18 @@ def list_pending_recommendations(merchant_id: int, db: Session = Depends(get_db)
 
 
 @router.post("/{recommendation_id}/respond", response_model=RecommendationOut)
-def respond_recommendation(recommendation_id: int, payload: RecommendationRespond, db: Session = Depends(get_db)):
-    recommendation = db.get(Recommendation, recommendation_id)
+def respond_recommendation(
+    recommendation_id: int,
+    payload: RecommendationRespond,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db),
+):
+    recommendation = (
+        db.query(Recommendation)
+        .join(Service, Recommendation.service_id == Service.id)
+        .filter(Recommendation.id == recommendation_id, Service.merchant_id == current_merchant.id)
+        .first()
+    )
     if recommendation is None:
         raise HTTPException(status_code=404, detail="Rekomendasi tidak ditemukan")
     if recommendation.status != RecommendationStatus.pending:

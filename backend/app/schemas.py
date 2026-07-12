@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class MerchantOut(BaseModel):
@@ -20,8 +20,29 @@ class MerchantUpdate(BaseModel):
     location: str = Field(min_length=1)
 
 
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    name: str = Field(min_length=1)
+    business_name: str = Field(min_length=1)
+    location: str = Field(min_length=1)
+
+
+class LoginRequest(BaseModel):
+    # Plain str, not EmailStr: this looks up an *already-stored* credential,
+    # it doesn't need to re-validate email format (and EmailStr rejects
+    # reserved-TLD addresses like the migration's placeholder *.local ones,
+    # which would otherwise make already-registered accounts unable to log in).
+    email: str
+    password: str
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    merchant: MerchantOut
+
+
 class ServiceCreate(BaseModel):
-    merchant_id: int
     name: str
     listed_price: Decimal = Field(gt=0)
     hpp: Decimal = Field(gt=0)

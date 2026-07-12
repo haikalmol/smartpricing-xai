@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_merchant
 from app.database import get_db
 from app.models import Merchant
 from app.schemas import MerchantOut, MerchantUpdate
@@ -8,22 +9,20 @@ from app.schemas import MerchantOut, MerchantUpdate
 router = APIRouter(prefix="/merchants", tags=["merchants"])
 
 
-@router.get("/{merchant_id}", response_model=MerchantOut)
-def get_merchant(merchant_id: int, db: Session = Depends(get_db)):
-    merchant = db.get(Merchant, merchant_id)
-    if merchant is None:
-        raise HTTPException(status_code=404, detail="Merchant tidak ditemukan")
-    return merchant
+@router.get("/me", response_model=MerchantOut)
+def get_my_merchant(current_merchant: Merchant = Depends(get_current_merchant)):
+    return current_merchant
 
 
-@router.put("/{merchant_id}", response_model=MerchantOut)
-def update_merchant(merchant_id: int, payload: MerchantUpdate, db: Session = Depends(get_db)):
-    merchant = db.get(Merchant, merchant_id)
-    if merchant is None:
-        raise HTTPException(status_code=404, detail="Merchant tidak ditemukan")
-    merchant.name = payload.name
-    merchant.business_name = payload.business_name
-    merchant.location = payload.location
+@router.put("/me", response_model=MerchantOut)
+def update_my_merchant(
+    payload: MerchantUpdate,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db),
+):
+    current_merchant.name = payload.name
+    current_merchant.business_name = payload.business_name
+    current_merchant.location = payload.location
     db.commit()
-    db.refresh(merchant)
-    return merchant
+    db.refresh(current_merchant)
+    return current_merchant

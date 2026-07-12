@@ -34,7 +34,11 @@ import {
   deleteService,
   fetchMerchant,
   updateMerchant,
-  DEFAULT_MERCHANT_ID,
+  login,
+  register,
+  deleteAccount,
+  setAuthToken,
+  getAuthToken,
   type Service,
   type Recommendation,
   type PendingRecommendation,
@@ -158,7 +162,6 @@ function AddServiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setSaving(true);
     setError(null);
     createService({
-      merchant_id: DEFAULT_MERCHANT_ID,
       name: name.trim(),
       listed_price: listedPriceNum,
       hpp: hppNum,
@@ -1110,7 +1113,7 @@ function EditProfileModal({
     if (!canSave) return;
     setSaving(true);
     setError(null);
-    updateMerchant(merchant.id, {
+    updateMerchant({
       name: name.trim(),
       business_name: businessName.trim(),
       location: location.trim(),
@@ -1195,19 +1198,33 @@ function Akun({
   onNavigate,
   notifOn,
   setNotifOn,
+  onLogout,
 }: {
   onNavigate: (t: Tab) => void;
   notifOn: boolean;
   setNotifOn: (v: boolean) => void;
+  onLogout: () => void;
 }) {
   const [view, setView] = useState<"profile" | "help" | "terms">("profile");
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [merchantError, setMerchantError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = () => {
+    if (!window.confirm("Yakin ingin menghapus akun? Anda tidak akan bisa masuk lagi setelah ini.")) {
+      return;
+    }
+    setDeletingAccount(true);
+    deleteAccount()
+      .then(onLogout)
+      .catch((err: Error) => setMerchantError(err.message))
+      .finally(() => setDeletingAccount(false));
+  };
 
   const loadMerchant = () => {
     setMerchantError(null);
-    fetchMerchant(DEFAULT_MERCHANT_ID)
+    fetchMerchant()
       .then(setMerchant)
       .catch((err: Error) => setMerchantError(err.message));
   };
@@ -1328,11 +1345,30 @@ function Akun({
 
         {/* Logout */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-          <button className="w-full flex items-center gap-3 px-4 py-4 hover:bg-red-50/70 transition-colors min-h-[54px] group">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-red-50/70 transition-colors min-h-[54px] group"
+          >
             <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
               <LogOut size={15} className="text-red-500" />
             </div>
             <span className="text-[14.5px] font-semibold text-red-500">Keluar (Logout)</span>
+          </button>
+        </div>
+
+        {/* Delete account */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+          <button
+            onClick={handleDeleteAccount}
+            disabled={deletingAccount}
+            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-red-50/70 transition-colors min-h-[54px] group disabled:opacity-60"
+          >
+            <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+              <Trash2 size={15} className="text-red-500" />
+            </div>
+            <span className="text-[14.5px] font-semibold text-red-500">
+              {deletingAccount ? "Menghapus..." : "Hapus Akun"}
+            </span>
           </button>
         </div>
 
@@ -1342,8 +1378,148 @@ function Akun({
   );
 }
 
+// ─── Auth (Masuk / Daftar) ───────────────────────────────────────────────────
+function AuthScreen({ onAuthed }: { onAuthed: (token: string, merchant: Merchant) => void }) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [location, setLocation] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSubmit =
+    email.trim().length > 0 &&
+    password.length >= 8 &&
+    (mode === "login" || (name.trim().length > 0 && businessName.trim().length > 0 && location.trim().length > 0)) &&
+    !submitting;
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError(null);
+    const call =
+      mode === "login"
+        ? login(email.trim(), password)
+        : register({
+            email: email.trim(),
+            password,
+            name: name.trim(),
+            business_name: businessName.trim(),
+            location: location.trim(),
+          });
+    call
+      .then((result) => onAuthed(result.access_token, result.merchant))
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setSubmitting(false));
+  };
+
+  return (
+    <Screen>
+      <div className="flex-1 overflow-y-auto px-5 py-8 space-y-5">
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
+            <Sparkles size={22} className="text-white" />
+          </div>
+          <span className="text-[17px] font-bold text-foreground tracking-tight">SmartPricing XAI</span>
+        </div>
+
+        <div className="flex bg-muted rounded-xl p-1">
+          <button
+            onClick={() => { setMode("login"); setError(null); }}
+            className={`flex-1 py-2 rounded-lg text-[13.5px] font-bold transition-colors ${mode === "login" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+          >
+            Masuk
+          </button>
+          <button
+            onClick={() => { setMode("register"); setError(null); }}
+            className={`flex-1 py-2 rounded-lg text-[13.5px] font-bold transition-colors ${mode === "register" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+          >
+            Daftar
+          </button>
+        </div>
+
+        {error && <ErrorBanner message={error} />}
+
+        <div className="space-y-3.5">
+          <div>
+            <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+              Email
+            </label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="nama@email.com"
+              className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+              Kata Sandi
+            </label>
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="Minimal 8 karakter"
+              className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+            />
+          </div>
+
+          {mode === "register" && (
+            <>
+              <div>
+                <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                  Nama Pemilik
+                </label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                  Nama Usaha
+                </label>
+                <input
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                  Lokasi
+                </label>
+                <input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="w-full bg-primary text-white font-bold rounded-xl py-3.5 text-[14.5px] hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {submitting ? "Memproses..." : mode === "login" ? "Masuk" : "Daftar"}
+        </button>
+      </div>
+    </Screen>
+  );
+}
+
 // ─── Root App ────────────────────────────────────────────────────────────────
 export default function App() {
+  const [authToken, setAuthTokenState] = useState<string | null>(() => getAuthToken());
   const [activeTab, setActiveTab] = useState<Tab>("saran");
   const [prevTab, setPrevTab] = useState<Tab>("saran");
 
@@ -1362,7 +1538,21 @@ export default function App() {
       .finally(() => setServicesLoading(false));
   };
 
-  useEffect(() => { loadServices(); }, []);
+  useEffect(() => {
+    if (authToken) loadServices();
+  }, [authToken]);
+
+  const handleAuthed = (token: string, _merchant: Merchant) => {
+    setAuthToken(token);
+    setAuthTokenState(token);
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setAuthTokenState(null);
+    setServices([]);
+    setActiveTab("saran");
+  };
 
   const handleNavigate = (t: Tab) => {
     setPrevTab(activeTab);
@@ -1374,13 +1564,17 @@ export default function App() {
     handleNavigate("input");
   };
 
+  if (!authToken) {
+    return <AuthScreen onAuthed={handleAuthed} />;
+  }
+
   const showBottomNav = activeTab !== "input";
 
   const screens: Record<Tab, React.ReactNode> = {
     saran:   <SaranAI services={services} servicesError={servicesError} onRetryServices={loadServices} notifOn={notifOn} />,
     katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onRetry={loadServices} onEditHpp={handleEditHpp} />,
     input:   <InputHPP services={services} servicesError={servicesError} onRetryServices={loadServices} onSaved={loadServices} onNavigate={handleNavigate} focusServiceId={hppFocusServiceId} />,
-    akun:    <Akun onNavigate={handleNavigate} notifOn={notifOn} setNotifOn={setNotifOn} />,
+    akun:    <Akun onNavigate={handleNavigate} notifOn={notifOn} setNotifOn={setNotifOn} onLogout={handleLogout} />,
   };
 
   // The real app IS a plain responsive page — the user's own mobile browser is the
