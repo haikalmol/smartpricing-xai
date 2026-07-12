@@ -3,6 +3,13 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localho
 // TODO: no auth in MVP scope (per CLAUDE.md) — hardcoded until login exists.
 export const DEFAULT_MERCHANT_ID = 1;
 
+export interface Merchant {
+  id: number;
+  name: string;
+  business_name: string;
+  location: string;
+}
+
 export interface Service {
   id: number;
   merchant_id: number;
@@ -43,6 +50,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     return undefined as T;
   }
   return res.json();
+}
+
+export function fetchMerchant(merchantId: number = DEFAULT_MERCHANT_ID): Promise<Merchant> {
+  return request(`/merchants/${merchantId}`);
+}
+
+export function updateMerchant(
+  merchantId: number,
+  payload: { name: string; business_name: string; location: string }
+): Promise<Merchant> {
+  return request(`/merchants/${merchantId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function fetchServices(merchantId: number = DEFAULT_MERCHANT_ID): Promise<Service[]> {

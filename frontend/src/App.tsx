@@ -31,9 +31,12 @@ import {
   updateServiceHpp,
   createService,
   deleteService,
+  fetchMerchant,
+  updateMerchant,
   DEFAULT_MERCHANT_ID,
   type Service,
   type Recommendation,
+  type Merchant,
 } from "./lib/api";
 
 type Tab = "saran" | "katalog" | "input" | "akun";
@@ -874,9 +877,215 @@ function InputHPP({
   );
 }
 
+// ─── Shared sub-screen header (Bantuan/Syarat back navigation) ──────────────
+function SubScreenHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <header className="bg-card border-b border-border px-2 py-2.5 flex items-center gap-1 flex-shrink-0">
+      <button
+        onClick={onBack}
+        className="w-10 h-10 rounded-full hover:bg-muted transition-colors flex items-center justify-center flex-shrink-0"
+        aria-label="Kembali"
+      >
+        <ArrowLeft size={19} className="text-foreground" />
+      </button>
+      <h1 className="flex-1 text-[15px] font-bold text-foreground text-center pr-10">{title}</h1>
+    </header>
+  );
+}
+
+// ─── Bantuan & Tutorial ──────────────────────────────────────────────────────
+function HelpScreen({ onBack }: { onBack: () => void }) {
+  const faqs = [
+    {
+      q: "Bagaimana cara kerja Saran AI?",
+      a: "AI membaca cuaca, kalender lokal, dan keramaian lokasi untuk menyarankan diskon atau bundling. Setiap saran disertai alasan (\"Alasan Algoritma\") dan tidak pernah diterapkan otomatis — Anda selalu memutuskan lewat tombol Setuju/Tolak.",
+    },
+    {
+      q: "Apa itu HPP dan kenapa penting?",
+      a: "HPP (Harga Pokok Penjualan) adalah biaya modal layanan Anda. AI tidak akan pernah menyarankan harga di bawah HPP yang Anda masukkan di halaman Input HPP — ini batas aman yang dijaga oleh sistem, bukan sekadar peringatan.",
+    },
+    {
+      q: "Bagaimana cara menambah atau menghapus layanan?",
+      a: "Buka Katalog, ketuk \"Tambah\" untuk layanan baru, atau \"Hapus\" pada kartu layanan untuk menghapusnya dari daftar. Riwayat rekomendasi layanan yang dihapus tetap tersimpan untuk catatan Anda.",
+    },
+    {
+      q: "Apa yang terjadi setelah saya menekan Setuju atau Tolak?",
+      a: "Keputusan Anda dicatat dengan waktu dan alasan yang ditampilkan saat itu, lalu sistem menyiapkan rekomendasi berikutnya berdasarkan kondisi terbaru.",
+    },
+  ];
+
+  return (
+    <Screen>
+      <SubScreenHeader title="Bantuan & Tutorial" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {faqs.map((item) => (
+          <div key={item.q} className="bg-card border border-border rounded-2xl px-4 py-3.5 shadow-sm">
+            <p className="text-[13.5px] font-bold text-foreground mb-1.5">{item.q}</p>
+            <p className="text-[13px] text-muted-foreground leading-snug">{item.a}</p>
+          </div>
+        ))}
+        <div className="h-2" />
+      </div>
+    </Screen>
+  );
+}
+
+// ─── Syarat & Ketentuan ──────────────────────────────────────────────────────
+function TermsScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <Screen>
+      <SubScreenHeader title="Syarat & Ketentuan" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+          <Info size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-[12.5px] text-amber-800 leading-snug">
+            <span className="font-bold">Draf sementara.</span> Teks ini belum ditinjau secara hukum dan akan
+            diperbarui sebelum peluncuran resmi.
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl px-4 py-3.5 shadow-sm space-y-3">
+          <p className="text-[13px] text-foreground leading-snug">
+            SmartPricing XAI adalah alat bantu rekomendasi harga untuk UMKM pariwisata. Rekomendasi yang
+            ditampilkan bersifat saran, bukan kewajiban — setiap perubahan harga tetap memerlukan persetujuan
+            Anda melalui tombol Setuju/Tolak.
+          </p>
+          <p className="text-[13px] text-foreground leading-snug">
+            Data layanan, HPP, dan keputusan yang Anda buat disimpan untuk keperluan penelitian dan peningkatan
+            sistem ini, sesuai tujuan hibah PKM yang mendanai pengembangan aplikasi.
+          </p>
+          <p className="text-[13px] text-foreground leading-snug">
+            Anda dapat menghapus layanan kapan pun melalui halaman Katalog. Untuk pertanyaan lebih lanjut,
+            hubungi tim pengembang melalui kontak yang tersedia di kampus Universitas Muhammadiyah Aceh.
+          </p>
+        </div>
+        <div className="h-2" />
+      </div>
+    </Screen>
+  );
+}
+
+// ─── Edit Profil / Profil Usaha modal ────────────────────────────────────────
+function EditProfileModal({
+  merchant,
+  onClose,
+  onSaved,
+}: {
+  merchant: Merchant;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(merchant.name);
+  const [businessName, setBusinessName] = useState(merchant.business_name);
+  const [location, setLocation] = useState(merchant.location);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSave =
+    name.trim().length > 0 && businessName.trim().length > 0 && location.trim().length > 0 && !saving;
+
+  const handleSubmit = () => {
+    if (!canSave) return;
+    setSaving(true);
+    setError(null);
+    updateMerchant(merchant.id, {
+      name: name.trim(),
+      business_name: businessName.trim(),
+      location: location.trim(),
+    })
+      .then(() => {
+        onSaved();
+        onClose();
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setSaving(false));
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 py-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl w-full max-w-[380px] p-5 space-y-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-bold text-foreground">Edit Profil</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-muted transition-colors flex items-center justify-center"
+            aria-label="Tutup"
+          >
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        {error && <ErrorBanner message={error} />}
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Nama Pemilik
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Nama Usaha
+          </label>
+          <input
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Lokasi
+          </label>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSave}
+          className="w-full bg-primary text-white font-bold rounded-xl py-3 text-[14px] hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {saving ? "Menyimpan..." : "Simpan Profil"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Screen 4: Akun ──────────────────────────────────────────────────────────
 function Akun({ onNavigate }: { onNavigate: (t: Tab) => void }) {
   const [notifOn, setNotifOn] = useState(true);
+  const [view, setView] = useState<"profile" | "help" | "terms">("profile");
+  const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [merchantError, setMerchantError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const loadMerchant = () => {
+    setMerchantError(null);
+    fetchMerchant(DEFAULT_MERCHANT_ID)
+      .then(setMerchant)
+      .catch((err: Error) => setMerchantError(err.message));
+  };
+
+  useEffect(() => { loadMerchant(); }, []);
+
+  if (view === "help") return <HelpScreen onBack={() => setView("profile")} />;
+  if (view === "terms") return <TermsScreen onBack={() => setView("profile")} />;
 
   return (
     <Screen>
@@ -884,7 +1093,17 @@ function Akun({ onNavigate }: { onNavigate: (t: Tab) => void }) {
         <h1 className="text-[16px] font-bold text-foreground">Akun Saya</h1>
       </header>
 
+      {showEditModal && merchant && (
+        <EditProfileModal
+          merchant={merchant}
+          onClose={() => setShowEditModal(false)}
+          onSaved={loadMerchant}
+        />
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {merchantError && <ErrorBanner message={merchantError} />}
+
         {/* Profile Card */}
         <div
           className="bg-card rounded-2xl px-4 py-4 flex items-center gap-4"
@@ -901,13 +1120,19 @@ function Akun({ onNavigate }: { onNavigate: (t: Tab) => void }) {
             <div className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 bg-green-500 rounded-full border-2 border-card w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[15.5px] font-bold text-foreground">Bapak Budi</p>
-            <p className="text-[12.5px] text-muted-foreground mt-0.5">Homestay Pagi Sore, Aceh</p>
+            <p className="text-[15.5px] font-bold text-foreground">{merchant?.name ?? "Memuat..."}</p>
+            <p className="text-[12.5px] text-muted-foreground mt-0.5">
+              {merchant ? `${merchant.business_name}, ${merchant.location}` : ""}
+            </p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-[11px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
                 UMKM Aktif
               </span>
-              <button className="text-[11.5px] text-primary font-bold hover:underline">
+              <button
+                onClick={() => setShowEditModal(true)}
+                disabled={!merchant}
+                className="text-[11.5px] text-primary font-bold hover:underline disabled:opacity-50"
+              >
                 Edit Profil →
               </button>
             </div>
@@ -931,17 +1156,19 @@ function Akun({ onNavigate }: { onNavigate: (t: Tab) => void }) {
         {/* Settings Group */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
           {[
-            { icon: Package, label: "Profil Usaha", toggle: false },
-            { icon: Bell, label: "Notifikasi Rekomendasi AI", toggle: true },
-            { icon: HelpCircle, label: "Bantuan & Tutorial", toggle: false },
-            { icon: FileText, label: "Syarat & Ketentuan", toggle: false },
+            { icon: Package, label: "Profil Usaha", toggle: false, onClick: () => setShowEditModal(true) },
+            { icon: Bell, label: "Notifikasi Rekomendasi AI", toggle: true, onClick: undefined },
+            { icon: HelpCircle, label: "Bantuan & Tutorial", toggle: false, onClick: () => setView("help") },
+            { icon: FileText, label: "Syarat & Ketentuan", toggle: false, onClick: () => setView("terms") },
           ].map((item, i, arr) => {
             const Icon = item.icon;
             const isLast = i === arr.length - 1;
+            const Row = item.toggle ? "div" : "button";
             return (
-              <div
+              <Row
                 key={item.label}
-                className={`flex items-center gap-3.5 px-4 min-h-[54px] ${!isLast ? "border-b border-border" : ""}`}
+                onClick={item.toggle ? undefined : item.onClick}
+                className={`w-full flex items-center gap-3.5 px-4 min-h-[54px] text-left ${!item.toggle ? "hover:bg-muted/40 transition-colors" : ""} ${!isLast ? "border-b border-border" : ""}`}
               >
                 <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
                   <Icon size={16} className="text-muted-foreground" />
@@ -960,11 +1187,11 @@ function Akun({ onNavigate }: { onNavigate: (t: Tab) => void }) {
                     />
                   </button>
                 ) : (
-                  <button className="hover:bg-muted rounded-lg p-1.5 transition-colors -mr-1">
+                  <span className="rounded-lg p-1.5 -mr-1">
                     <ChevronRight size={16} className="text-muted-foreground" />
-                  </button>
+                  </span>
                 )}
-              </div>
+              </Row>
             );
           })}
         </div>

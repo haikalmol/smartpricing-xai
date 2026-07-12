@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import recommendations, services
+from app.routers import merchants, recommendations, services
 
 app = FastAPI(title="SmartPricing XAI API")
 
@@ -14,6 +14,7 @@ app.add_middleware(
 
 app.include_router(services.router)
 app.include_router(recommendations.router)
+app.include_router(merchants.router)
 
 
 @app.get("/health")

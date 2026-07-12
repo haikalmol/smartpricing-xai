@@ -5,6 +5,21 @@ from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class MerchantOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    business_name: str
+    location: str
+
+
+class MerchantUpdate(BaseModel):
+    name: str = Field(min_length=1)
+    business_name: str = Field(min_length=1)
+    location: str = Field(min_length=1)
+
+
 class ServiceCreate(BaseModel):
     merchant_id: int
     name: str
