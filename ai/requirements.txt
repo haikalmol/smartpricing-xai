@@ -2,7 +2,11 @@ pandas
 openpyxl
 numpy
 scikit-learn
-xgboost
+# xgboost pinned <3.0: xgboost 3.x changed how base_score is serialized
+# (bracketed array string instead of a plain float), which shap 0.49.1 (latest
+# as of AI-03) can't parse -- TreeExplainer throws ValueError on load. No newer
+# shap release fixes this yet; revisit the pin if one does.
+xgboost<3.0
 shap
 matplotlib
 seaborn
