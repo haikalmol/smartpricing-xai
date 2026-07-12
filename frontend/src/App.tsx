@@ -28,6 +28,8 @@ import {
   fetchCurrentRecommendation,
   respondToRecommendation,
   updateServiceHpp,
+  createService,
+  DEFAULT_MERCHANT_ID,
   type Service,
   type Recommendation,
 } from "./lib/api";
@@ -127,6 +129,114 @@ function FetchErrorState({ onRetry }: { onRetry: () => void }) {
       >
         Coba Lagi
       </button>
+    </div>
+  );
+}
+
+// ─── Add Service modal (Katalog's "Tambah") ─────────────────────────────────
+function AddServiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [name, setName] = useState("");
+  const [listedPrice, setListedPrice] = useState("");
+  const [hpp, setHpp] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const listedPriceNum = parseInt(listedPrice.replace(/\./g, ""), 10) || 0;
+  const hppNum = parseInt(hpp.replace(/\./g, ""), 10) || 0;
+  const canSave = name.trim().length > 0 && listedPriceNum > 0 && hppNum > 0 && !saving;
+
+  const handleSubmit = () => {
+    if (!canSave) return;
+    setSaving(true);
+    setError(null);
+    createService({
+      merchant_id: DEFAULT_MERCHANT_ID,
+      name: name.trim(),
+      listed_price: listedPriceNum,
+      hpp: hppNum,
+    })
+      .then(() => {
+        onCreated();
+        onClose();
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setSaving(false));
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 py-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl w-full max-w-[380px] p-5 space-y-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-bold text-foreground">Tambah Layanan</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-muted transition-colors flex items-center justify-center"
+            aria-label="Tutup"
+          >
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        {error && <ErrorBanner message={error} />}
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Nama Layanan
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="mis. Sewa Motor"
+            className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Harga Normal
+          </label>
+          <div className="flex items-center border border-border rounded-xl overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+            <span className="px-3 py-2.5 text-[13px] font-bold text-muted-foreground border-r border-border bg-muted/50">Rp</span>
+            <input
+              value={listedPrice}
+              onChange={(e) => setListedPrice(e.target.value)}
+              inputMode="numeric"
+              placeholder="0"
+              className="flex-1 px-3.5 py-2.5 text-[14px] text-foreground bg-transparent focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            HPP (Harga Pokok)
+          </label>
+          <div className="flex items-center border border-amber-300 rounded-xl overflow-hidden focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-100 transition-all">
+            <span className="px-3 py-2.5 text-[13px] font-bold text-amber-700 border-r border-amber-200 bg-amber-50">Rp</span>
+            <input
+              value={hpp}
+              onChange={(e) => setHpp(e.target.value)}
+              inputMode="numeric"
+              placeholder="0"
+              className="flex-1 px-3.5 py-2.5 text-[14px] text-foreground bg-transparent focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSave}
+          className="w-full bg-primary text-white font-bold rounded-xl py-3 text-[14px] hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {saving ? "Menyimpan..." : "Simpan Layanan"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -404,15 +514,16 @@ function Katalog({
   loading,
   error,
   onRetry,
-  onNavigate,
+  onEditHpp,
 }: {
   services: Service[];
   loading: boolean;
   error: string | null;
   onRetry: () => void;
-  onNavigate: (t: Tab) => void;
+  onEditHpp: (serviceId: number) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
   const filtered = services.filter((s) =>
     s.name.toLowerCase().includes(query.toLowerCase())
   );
@@ -421,11 +532,18 @@ function Katalog({
     <Screen>
       <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between flex-shrink-0">
         <h1 className="text-[16px] font-bold text-foreground">Katalog Layanan</h1>
-        <button className="bg-primary text-white text-[12.5px] font-bold rounded-xl px-3 py-2 flex items-center gap-1.5 hover:bg-blue-700 active:scale-95 transition-all min-h-[36px] shadow-sm">
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-primary text-white text-[12.5px] font-bold rounded-xl px-3 py-2 flex items-center gap-1.5 hover:bg-blue-700 active:scale-95 transition-all min-h-[36px] shadow-sm"
+        >
           <Plus size={14} />
           Tambah
         </button>
       </header>
+
+      {showAddModal && (
+        <AddServiceModal onClose={() => setShowAddModal(false)} onCreated={onRetry} />
+      )}
 
       {error && services.length === 0 && !loading ? (
         <FetchErrorState onRetry={onRetry} />
@@ -473,7 +591,7 @@ function Katalog({
                       <p className="text-[13px] text-foreground font-semibold mt-0.5">Rp {formatRupiah(hargaNum)}</p>
                       <div className="flex items-center gap-3 mt-1">
                         <button
-                          onClick={() => onNavigate("input")}
+                          onClick={() => onEditHpp(s.id)}
                           className="text-[11px] text-primary font-bold hover:underline"
                         >
                           Lihat HPP
@@ -484,7 +602,10 @@ function Katalog({
                       </div>
                     </div>
 
-                    <button className="border border-slate-200 text-slate-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-muted active:scale-95 transition-all flex items-center gap-1.5 min-h-[38px] flex-shrink-0">
+                    <button
+                      onClick={() => onEditHpp(s.id)}
+                      className="border border-slate-200 text-slate-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-muted active:scale-95 transition-all flex items-center gap-1.5 min-h-[38px] flex-shrink-0"
+                    >
                       <Edit3 size={12} />
                       Edit
                     </button>
@@ -517,12 +638,14 @@ function InputHPP({
   onRetryServices,
   onSaved,
   onNavigate,
+  focusServiceId,
 }: {
   services: Service[];
   servicesError: string | null;
   onRetryServices: () => void;
   onSaved: () => void;
   onNavigate: (t: Tab) => void;
+  focusServiceId: number | null;
 }) {
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [hpp, setHpp] = useState("");
@@ -532,8 +655,10 @@ function InputHPP({
 
   useEffect(() => {
     if (services.length > 0 && selectedServiceId === null) {
-      setSelectedServiceId(services[0].id);
+      const wanted = focusServiceId !== null && services.some((s) => s.id === focusServiceId);
+      setSelectedServiceId(wanted ? focusServiceId : services[0].id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [services, selectedServiceId]);
 
   const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
@@ -840,6 +965,7 @@ export default function App() {
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [servicesError, setServicesError] = useState<string | null>(null);
+  const [hppFocusServiceId, setHppFocusServiceId] = useState<number | null>(null);
 
   const loadServices = () => {
     setServicesLoading(true);
@@ -857,12 +983,17 @@ export default function App() {
     setActiveTab(t);
   };
 
+  const handleEditHpp = (serviceId: number) => {
+    setHppFocusServiceId(serviceId);
+    handleNavigate("input");
+  };
+
   const showBottomNav = activeTab !== "input";
 
   const screens: Record<Tab, React.ReactNode> = {
     saran:   <SaranAI services={services} servicesError={servicesError} onRetryServices={loadServices} />,
-    katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onRetry={loadServices} onNavigate={handleNavigate} />,
-    input:   <InputHPP services={services} servicesError={servicesError} onRetryServices={loadServices} onSaved={loadServices} onNavigate={handleNavigate} />,
+    katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onRetry={loadServices} onEditHpp={handleEditHpp} />,
+    input:   <InputHPP services={services} servicesError={servicesError} onRetryServices={loadServices} onSaved={loadServices} onNavigate={handleNavigate} focusServiceId={hppFocusServiceId} />,
     akun:    <Akun onNavigate={handleNavigate} />,
   };
 

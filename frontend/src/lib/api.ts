@@ -46,6 +46,18 @@ export function fetchServices(merchantId: number = DEFAULT_MERCHANT_ID): Promise
   return request(`/services?merchant_id=${merchantId}`);
 }
 
+export function createService(payload: {
+  merchant_id: number;
+  name: string;
+  listed_price: number;
+  hpp: number;
+}): Promise<Service> {
+  return request(`/services`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function updateServiceHpp(serviceId: number, hpp: number): Promise<Service> {
   return request(`/services/${serviceId}/hpp`, {
     method: "PUT",
