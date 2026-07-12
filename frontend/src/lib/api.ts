@@ -29,6 +29,15 @@ export interface Recommendation {
   responded_at: string | null;
 }
 
+export interface PendingRecommendation {
+  id: number;
+  service_id: number;
+  service_name: string;
+  suggested_price: string;
+  rationale_text: string;
+  created_at: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -95,6 +104,12 @@ export function updateServiceHpp(serviceId: number, hpp: number): Promise<Servic
 
 export function fetchCurrentRecommendation(serviceId: number): Promise<Recommendation> {
   return request(`/recommendations/current?service_id=${serviceId}`);
+}
+
+export function fetchPendingRecommendations(
+  merchantId: number = DEFAULT_MERCHANT_ID
+): Promise<PendingRecommendation[]> {
+  return request(`/recommendations/pending?merchant_id=${merchantId}`);
 }
 
 export function respondToRecommendation(

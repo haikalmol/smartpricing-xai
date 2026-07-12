@@ -56,3 +56,12 @@ class RecommendationOut(BaseModel):
 
 class RecommendationRespond(BaseModel):
     status: Literal["approved", "rejected"]
+
+
+class PendingRecommendationOut(BaseModel):
+    id: int
+    service_id: int
+    service_name: str
+    suggested_price: Decimal
+    rationale_text: str
+    created_at: datetime

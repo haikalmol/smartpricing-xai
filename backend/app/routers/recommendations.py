@@ -7,7 +7,7 @@ from app.database import get_db
 from app.engine.weighting import generate_recommendation
 from app.models import Recommendation, RecommendationStatus, Service
 from app.recommendation import build_recommendation
-from app.schemas import RecommendationOut, RecommendationRespond
+from app.schemas import PendingRecommendationOut, RecommendationOut, RecommendationRespond
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
@@ -43,6 +43,36 @@ def current_recommendation(service_id: int, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(recommendation)
     return recommendation
+
+
+@router.get("/pending", response_model=list[PendingRecommendationOut])
+def list_pending_recommendations(merchant_id: int, db: Session = Depends(get_db)):
+    # Read-only: lists recommendations that already exist. Deliberately does NOT
+    # call generate_recommendation for services that don't have one yet -- unlike
+    # /current, this can be polled for a notification badge without silently
+    # burning OpenWeather/Geoapify free-tier quota on every check.
+    rows = (
+        db.query(Recommendation, Service.name)
+        .join(Service, Recommendation.service_id == Service.id)
+        .filter(
+            Service.merchant_id == merchant_id,
+            Service.is_active.is_(True),
+            Recommendation.status == RecommendationStatus.pending,
+        )
+        .order_by(Recommendation.created_at.desc())
+        .all()
+    )
+    return [
+        PendingRecommendationOut(
+            id=rec.id,
+            service_id=rec.service_id,
+            service_name=service_name,
+            suggested_price=rec.suggested_price,
+            rationale_text=rec.rationale_text,
+            created_at=rec.created_at,
+        )
+        for rec, service_name in rows
+    ]
 
 
 @router.post("/{recommendation_id}/respond", response_model=RecommendationOut)

@@ -27,6 +27,7 @@ import {
 import {
   fetchServices,
   fetchCurrentRecommendation,
+  fetchPendingRecommendations,
   respondToRecommendation,
   updateServiceHpp,
   createService,
@@ -36,6 +37,7 @@ import {
   DEFAULT_MERCHANT_ID,
   type Service,
   type Recommendation,
+  type PendingRecommendation,
   type Merchant,
 } from "./lib/api";
 
@@ -251,10 +253,12 @@ function SaranAI({
   services,
   servicesError,
   onRetryServices,
+  notifOn,
 }: {
   services: Service[];
   servicesError: string | null;
   onRetryServices: () => void;
+  notifOn: boolean;
 }) {
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
@@ -263,6 +267,14 @@ function SaranAI({
   const [alasanOpen, setAlasanOpen] = useState(false);
   const [decision, setDecision] = useState<"setuju" | "tolak" | null>(null);
   const [responding, setResponding] = useState(false);
+  const [pendingList, setPendingList] = useState<PendingRecommendation[]>([]);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+
+  const loadPending = () => {
+    fetchPendingRecommendations().then(setPendingList).catch(() => {});
+  };
+
+  useEffect(() => { loadPending(); }, []);
 
   useEffect(() => {
     if (services.length > 0 && selectedServiceId === null) {
@@ -274,7 +286,10 @@ function SaranAI({
     setLoading(true);
     setError(null);
     fetchCurrentRecommendation(serviceId)
-      .then(setRecommendation)
+      .then((rec) => {
+        setRecommendation(rec);
+        loadPending();
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -295,6 +310,7 @@ function SaranAI({
     respondToRecommendation(recommendation.id, status)
       .then(() => {
         setDecision(status === "approved" ? "setuju" : "tolak");
+        loadPending();
         setTimeout(() => {
           if (selectedServiceId !== null) loadRecommendation(selectedServiceId);
         }, 2000);
@@ -346,10 +362,55 @@ function SaranAI({
           </div>
           <span className="text-[15px] font-bold text-foreground tracking-tight">SmartPricing XAI</span>
         </div>
-        <button className="relative w-9 h-9 rounded-full hover:bg-muted transition-colors flex items-center justify-center" aria-label="Notifikasi">
-          <Bell size={19} className="text-foreground" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifPanel((v) => !v)}
+            className="relative w-9 h-9 rounded-full hover:bg-muted transition-colors flex items-center justify-center"
+            aria-label="Notifikasi"
+          >
+            <Bell size={19} className="text-foreground" />
+            {notifOn && pendingList.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card" />
+            )}
+          </button>
+
+          {showNotifPanel && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowNotifPanel(false)} />
+              <div
+                className="absolute right-0 top-11 w-72 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden"
+                style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
+              >
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="text-[13px] font-bold text-foreground">Rekomendasi Menunggu</p>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {pendingList.length === 0 ? (
+                    <p className="text-[12.5px] text-muted-foreground text-center py-6">
+                      Tidak ada rekomendasi baru.
+                    </p>
+                  ) : (
+                    pendingList.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setSelectedServiceId(item.service_id);
+                          setShowNotifPanel(false);
+                        }}
+                        className="w-full text-left px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/40 transition-colors"
+                      >
+                        <p className="text-[12.5px] font-bold text-foreground">{item.service_name}</p>
+                        <p className="text-[11.5px] text-muted-foreground mt-0.5 line-clamp-2">
+                          Rp {formatRupiah(Number(item.suggested_price))} — {item.rationale_text}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Scrollable body */}
@@ -1068,8 +1129,15 @@ function EditProfileModal({
 }
 
 // ─── Screen 4: Akun ──────────────────────────────────────────────────────────
-function Akun({ onNavigate }: { onNavigate: (t: Tab) => void }) {
-  const [notifOn, setNotifOn] = useState(true);
+function Akun({
+  onNavigate,
+  notifOn,
+  setNotifOn,
+}: {
+  onNavigate: (t: Tab) => void;
+  notifOn: boolean;
+  setNotifOn: (v: boolean) => void;
+}) {
   const [view, setView] = useState<"profile" | "help" | "terms">("profile");
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [merchantError, setMerchantError] = useState<string | null>(null);
@@ -1221,6 +1289,7 @@ export default function App() {
   const [servicesLoading, setServicesLoading] = useState(true);
   const [servicesError, setServicesError] = useState<string | null>(null);
   const [hppFocusServiceId, setHppFocusServiceId] = useState<number | null>(null);
+  const [notifOn, setNotifOn] = useState(true);
 
   const loadServices = () => {
     setServicesLoading(true);
@@ -1246,10 +1315,10 @@ export default function App() {
   const showBottomNav = activeTab !== "input";
 
   const screens: Record<Tab, React.ReactNode> = {
-    saran:   <SaranAI services={services} servicesError={servicesError} onRetryServices={loadServices} />,
+    saran:   <SaranAI services={services} servicesError={servicesError} onRetryServices={loadServices} notifOn={notifOn} />,
     katalog: <Katalog services={services} loading={servicesLoading} error={servicesError} onRetry={loadServices} onEditHpp={handleEditHpp} />,
     input:   <InputHPP services={services} servicesError={servicesError} onRetryServices={loadServices} onSaved={loadServices} onNavigate={handleNavigate} focusServiceId={hppFocusServiceId} />,
-    akun:    <Akun onNavigate={handleNavigate} />,
+    akun:    <Akun onNavigate={handleNavigate} notifOn={notifOn} setNotifOn={setNotifOn} />,
   };
 
   // The real app IS a plain responsive page — the user's own mobile browser is the
