@@ -1,0 +1,6 @@
+data/
+models/*.pkl
+models/*.joblib
+kaggle.json
+.venv/
+__pycache__/

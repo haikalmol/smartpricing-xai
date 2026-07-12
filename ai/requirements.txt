@@ -1,0 +1,10 @@
+pandas
+openpyxl
+numpy
+scikit-learn
+xgboost
+shap
+matplotlib
+seaborn
+kaggle
+joblib
