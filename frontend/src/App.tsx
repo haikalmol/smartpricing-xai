@@ -22,6 +22,7 @@ import {
   CheckCircle,
   TrendingUp,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import {
   fetchServices,
@@ -29,6 +30,7 @@ import {
   respondToRecommendation,
   updateServiceHpp,
   createService,
+  deleteService,
   DEFAULT_MERCHANT_ID,
   type Service,
   type Recommendation,
@@ -524,9 +526,23 @@ function Katalog({
 }) {
   const [query, setQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const filtered = services.filter((s) =>
     s.name.toLowerCase().includes(query.toLowerCase())
   );
+
+  const handleDelete = (service: Service) => {
+    if (!window.confirm(`Hapus layanan "${service.name}"? Tindakan ini tidak bisa dibatalkan.`)) {
+      return;
+    }
+    setDeletingId(service.id);
+    setDeleteError(null);
+    deleteService(service.id)
+      .then(onRetry)
+      .catch((err: Error) => setDeleteError(err.message))
+      .finally(() => setDeletingId(null));
+  };
 
   return (
     <Screen>
@@ -550,6 +566,7 @@ function Katalog({
       ) : (
       <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3">
         {error && <ErrorBanner message={error} />}
+        {deleteError && <ErrorBanner message={deleteError} />}
 
         {/* Search */}
         <div className="relative">
@@ -602,13 +619,24 @@ function Katalog({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => onEditHpp(s.id)}
-                      className="border border-slate-200 text-slate-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-muted active:scale-95 transition-all flex items-center gap-1.5 min-h-[38px] flex-shrink-0"
-                    >
-                      <Edit3 size={12} />
-                      Edit
-                    </button>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => onEditHpp(s.id)}
+                        className="border border-slate-200 text-slate-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-muted active:scale-95 transition-all flex items-center gap-1.5 min-h-[38px]"
+                      >
+                        <Edit3 size={12} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s)}
+                        disabled={deletingId === s.id}
+                        aria-label={`Hapus ${s.name}`}
+                        className="border border-red-200 text-red-500 text-[12.5px] font-semibold rounded-xl px-3 py-2 hover:bg-red-50 active:scale-95 transition-all flex items-center justify-center gap-1.5 min-h-[38px] disabled:opacity-50"
+                      >
+                        <Trash2 size={12} />
+                        {deletingId === s.id ? "..." : "Hapus"}
+                      </button>
+                    </div>
                   </div>
                 );
               })}

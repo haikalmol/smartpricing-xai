@@ -39,6 +39,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await res.text().catch(() => "");
     throw new Error(`${init?.method ?? "GET"} ${path} gagal: ${res.status} ${body}`);
   }
+  if (res.status === 204) {
+    return undefined as T;
+  }
   return res.json();
 }
 
@@ -56,6 +59,10 @@ export function createService(payload: {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function deleteService(serviceId: number): Promise<void> {
+  return request(`/services/${serviceId}`, { method: "DELETE" });
 }
 
 export function updateServiceHpp(serviceId: number, hpp: number): Promise<Service> {

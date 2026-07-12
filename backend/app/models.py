@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -26,6 +26,11 @@ class Service(Base):
     name = Column(String, nullable=False)
     listed_price = Column(Numeric(12, 2), nullable=False)
     hpp = Column(Numeric(12, 2), nullable=False)
+    # Soft-delete: recommendation rows reference service_id with no ON DELETE
+    # CASCADE, and CLAUDE.md requires every approve/reject decision stay logged
+    # for Paper A's adoption metrics -- hard-deleting a service would either
+    # violate that FK or destroy that history. Deleting just flips this instead.
+    is_active = Column(Boolean, nullable=False, default=True)
 
     merchant = relationship("Merchant", back_populates="services")
     recommendations = relationship("Recommendation", back_populates="service")
