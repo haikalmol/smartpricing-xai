@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_merchant
 from app.database import get_db
-from app.geocoding import geocode_location
+from app.maps_link import parse_maps_link
 from app.models import Merchant
 from app.schemas import MerchantOut, MerchantUpdate
 
@@ -21,13 +21,26 @@ def update_my_merchant(
     current_merchant: Merchant = Depends(get_current_merchant),
     db: Session = Depends(get_db),
 ):
-    # Only re-geocode if the location text actually changed -- re-submitting
-    # the same profile (e.g. just editing name) shouldn't burn a Geoapify call.
-    if payload.location != current_merchant.location:
-        geocoded = geocode_location(payload.location)
-        current_merchant.latitude = geocoded.lat if geocoded else None
-        current_merchant.longitude = geocoded.lon if geocoded else None
-        current_merchant.geocoded_label = geocoded.label if geocoded else None
+    # Pasted Google Maps link is now the PRIMARY way lat/lon gets set --
+    # free-text address geocoding (Geoapify) is unreliable on real detailed
+    # Indonesian addresses (H21: a genuine Kuta Alam street address resolved
+    # at confidence 0.17 and was correctly rejected). No link submitted this
+    # save -> leave latitude/longitude/geocoded_label exactly as they were.
+    if payload.maps_link and payload.maps_link.strip():
+        parsed = parse_maps_link(payload.maps_link)
+        if parsed is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Link Google Maps tidak dikenali. Coba salin ulang link dari tombol Bagikan "
+                       "di Google Maps, atau hubungi Najwa untuk bantuan.",
+            )
+        current_merchant.latitude = parsed.lat
+        current_merchant.longitude = parsed.lon
+        # Resolved place name (e.g. from a /place/<Name>/ segment) wins when
+        # present; otherwise the label falls back to the merchant's own
+        # free-text location rather than being left stale from a prior link.
+        current_merchant.geocoded_label = parsed.place_name or payload.location
+
     current_merchant.name = payload.name
     current_merchant.business_name = payload.business_name
     current_merchant.location = payload.location

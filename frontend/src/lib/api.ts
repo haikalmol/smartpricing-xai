@@ -128,6 +128,7 @@ export function updateMerchant(payload: {
   name: string;
   business_name: string;
   location: string;
+  maps_link?: string;
 }): Promise<Merchant> {
   return request(`/merchants/me`, {
     method: "PUT",

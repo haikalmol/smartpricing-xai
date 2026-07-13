@@ -18,6 +18,10 @@ class MerchantUpdate(BaseModel):
     name: str = Field(min_length=1)
     business_name: str = Field(min_length=1)
     location: str = Field(min_length=1)
+    # Optional: pasted Google Maps share link, the primary way lat/lon gets
+    # set now (see app/maps_link.py). Omitted/blank on saves that don't touch
+    # location -- leaves latitude/longitude/geocoded_label untouched.
+    maps_link: Optional[str] = None
 
 
 class RegisterRequest(BaseModel):

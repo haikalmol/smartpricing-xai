@@ -1103,6 +1103,7 @@ function EditProfileModal({
   const [name, setName] = useState(merchant.name);
   const [businessName, setBusinessName] = useState(merchant.business_name);
   const [location, setLocation] = useState(merchant.location);
+  const [mapsLink, setMapsLink] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1117,6 +1118,7 @@ function EditProfileModal({
       name: name.trim(),
       business_name: businessName.trim(),
       location: location.trim(),
+      maps_link: mapsLink.trim() || undefined,
     })
       .then(() => {
         onSaved();
@@ -1179,6 +1181,23 @@ function EditProfileModal({
             onChange={(e) => setLocation(e.target.value)}
             className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
           />
+        </div>
+
+        <div>
+          <label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Tempel Link Google Maps
+          </label>
+          <input
+            value={mapsLink}
+            onChange={(e) => setMapsLink(e.target.value)}
+            placeholder="https://maps.app.goo.gl/..."
+            className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-[14px] text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+          />
+          <p className="text-[11.5px] text-muted-foreground mt-1.5 leading-snug">
+            Buka lokasi usaha Anda di Google Maps, ketuk tombol Bagikan, lalu tempel link-nya di
+            sini. Ini cara paling akurat agar Saran AI menghitung cuaca dan keramaian dari lokasi
+            usaha Anda yang sebenarnya.
+          </p>
         </div>
 
         <button
