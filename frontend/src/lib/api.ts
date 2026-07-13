@@ -23,6 +23,12 @@ export interface Merchant {
   location: string;
 }
 
+export interface MerchantStats {
+  services_count: number;
+  recommendations_count: number;
+  approved_count: number;
+}
+
 export interface Service {
   id: number;
   merchant_id: number;
@@ -122,6 +128,10 @@ export function deleteAccount(): Promise<void> {
 
 export function fetchMerchant(): Promise<Merchant> {
   return request(`/merchants/me`);
+}
+
+export function fetchMerchantStats(): Promise<MerchantStats> {
+  return request(`/merchants/me/stats`);
 }
 
 export function updateMerchant(payload: {

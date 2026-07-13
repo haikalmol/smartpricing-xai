@@ -24,6 +24,12 @@ class MerchantUpdate(BaseModel):
     maps_link: Optional[str] = None
 
 
+class MerchantStatsOut(BaseModel):
+    services_count: int
+    recommendations_count: int
+    approved_count: int
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)

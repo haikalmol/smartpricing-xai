@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_merchant
 from app.database import get_db
 from app.maps_link import parse_maps_link
 from app.models import Merchant, Recommendation, RecommendationStatus, Service
-from app.schemas import MerchantOut, MerchantUpdate
+from app.schemas import MerchantOut, MerchantStatsOut, MerchantUpdate
 
 router = APIRouter(prefix="/merchants", tags=["merchants"])
 
@@ -13,6 +14,38 @@ router = APIRouter(prefix="/merchants", tags=["merchants"])
 @router.get("/me", response_model=MerchantOut)
 def get_my_merchant(current_merchant: Merchant = Depends(get_current_merchant)):
     return current_merchant
+
+
+@router.get("/me/stats", response_model=MerchantStatsOut)
+def get_my_merchant_stats(
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db),
+):
+    # "Layanan" counts active services only -- matches Katalog's own listing
+    # filter (services.py's list_services), not soft-deleted cruft.
+    services_count = (
+        db.query(func.count(Service.id))
+        .filter(Service.merchant_id == current_merchant.id, Service.is_active.is_(True))
+        .scalar()
+    )
+    # "Saran AI" / "Disetujui" count every recommendation ever generated for
+    # this merchant, including ones tied to a since-deleted service -- this
+    # is real adoption history (CLAUDE.md: every decision stays logged), not
+    # scoped down to whatever happens to still be in the active catalog.
+    service_ids = db.query(Service.id).filter(Service.merchant_id == current_merchant.id)
+    recommendations_count = (
+        db.query(func.count(Recommendation.id)).filter(Recommendation.service_id.in_(service_ids)).scalar()
+    )
+    approved_count = (
+        db.query(func.count(Recommendation.id))
+        .filter(Recommendation.service_id.in_(service_ids), Recommendation.status == RecommendationStatus.approved)
+        .scalar()
+    )
+    return MerchantStatsOut(
+        services_count=services_count,
+        recommendations_count=recommendations_count,
+        approved_count=approved_count,
+    )
 
 
 @router.put("/me", response_model=MerchantOut)

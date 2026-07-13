@@ -33,6 +33,7 @@ import {
   createService,
   deleteService,
   fetchMerchant,
+  fetchMerchantStats,
   updateMerchant,
   login,
   register,
@@ -43,6 +44,7 @@ import {
   type Recommendation,
   type PendingRecommendation,
   type Merchant,
+  type MerchantStats,
 } from "./lib/api";
 import termsRaw from "../../syaratketentuan.md?raw";
 
@@ -1227,6 +1229,7 @@ function Akun({
   const [view, setView] = useState<"profile" | "help" | "terms">("profile");
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [merchantError, setMerchantError] = useState<string | null>(null);
+  const [stats, setStats] = useState<MerchantStats | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -1248,7 +1251,13 @@ function Akun({
       .catch((err: Error) => setMerchantError(err.message));
   };
 
-  useEffect(() => { loadMerchant(); }, []);
+  // Secondary, non-blocking -- a stats-fetch failure shouldn't take down the
+  // whole Akun screen the way a merchant-profile failure should.
+  const loadStats = () => {
+    fetchMerchantStats().then(setStats).catch(() => {});
+  };
+
+  useEffect(() => { loadMerchant(); loadStats(); }, []);
 
   if (view === "help") return <HelpScreen onBack={() => setView("profile")} />;
   if (view === "terms") return <TermsScreen onBack={() => setView("profile")} />;
@@ -1263,7 +1272,7 @@ function Akun({
         <EditProfileModal
           merchant={merchant}
           onClose={() => setShowEditModal(false)}
-          onSaved={loadMerchant}
+          onSaved={() => { loadMerchant(); loadStats(); }}
         />
       )}
 
@@ -1308,9 +1317,9 @@ function Akun({
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2.5">
           {[
-            { label: "Layanan", value: "4" },
-            { label: "Saran AI", value: "12" },
-            { label: "Disetujui", value: "9" },
+            { label: "Layanan", value: stats ? String(stats.services_count) : "-" },
+            { label: "Saran AI", value: stats ? String(stats.recommendations_count) : "-" },
+            { label: "Disetujui", value: stats ? String(stats.approved_count) : "-" },
           ].map((s) => (
             <div key={s.label} className="bg-card rounded-2xl px-3 py-3 text-center border border-border">
               <p className="text-[17px] font-bold text-foreground">{s.value}</p>
