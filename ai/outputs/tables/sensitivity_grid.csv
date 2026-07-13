@@ -1,0 +1,190 @@
+weather_condition,calendar_type,density_count,discount_pct,suggestion_type,dominant_input,rationale_text
+Clear,Hari Biasa,0,6.0,discount,density,"Lokasi: 0 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Hari Biasa,1,6.0,discount,density,"Lokasi: 1 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Hari Biasa,2,6.0,discount,density,"Lokasi: 2 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Hari Biasa,3,6.0,discount,density,"Lokasi: 3 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Hari Biasa,4,6.0,discount,density,"Lokasi: 4 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Hari Biasa,5,6.0,discount,density,"Lokasi: 5 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Hari Biasa,6,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,7,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,8,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,9,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,10,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,11,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,12,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,13,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,14,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Hari Biasa,15,0.0,discount,density,"Lokasi: 15 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Hari Biasa,16,0.0,discount,density,"Lokasi: 16 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Hari Biasa,17,0.0,discount,density,"Lokasi: 17 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Hari Biasa,18,0.0,discount,density,"Lokasi: 18 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Hari Biasa,19,0.0,discount,density,"Lokasi: 19 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Hari Biasa,20,0.0,discount,density,"Lokasi: 20 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Akhir Pekan,0,1.0,discount,density,"Lokasi: 0 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Akhir Pekan,1,1.0,discount,density,"Lokasi: 1 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Akhir Pekan,2,1.0,discount,density,"Lokasi: 2 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Akhir Pekan,3,1.0,discount,density,"Lokasi: 3 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Akhir Pekan,4,1.0,discount,density,"Lokasi: 4 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Akhir Pekan,5,1.0,discount,density,"Lokasi: 5 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clear,Akhir Pekan,6,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,7,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,8,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,9,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,10,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,11,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,12,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,13,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,14,0.0,discount,weather,Cuaca: Cerah — wisata diprediksi ramai karena cuaca cerah.
+Clear,Akhir Pekan,15,0.0,discount,density,"Lokasi: 15 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Akhir Pekan,16,0.0,discount,density,"Lokasi: 16 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Akhir Pekan,17,0.0,discount,density,"Lokasi: 17 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Akhir Pekan,18,0.0,discount,density,"Lokasi: 18 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Akhir Pekan,19,0.0,discount,density,"Lokasi: 19 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Akhir Pekan,20,0.0,discount,density,"Lokasi: 20 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,0,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,1,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,2,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,3,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,4,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,5,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,6,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,7,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,8,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,9,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,10,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,11,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,12,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,13,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,14,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,15,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,16,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,17,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,18,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,19,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clear,Hari Libur Nasional,20,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Biasa,0,6.0,discount,density,"Lokasi: 0 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Hari Biasa,1,6.0,discount,density,"Lokasi: 1 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Hari Biasa,2,6.0,discount,density,"Lokasi: 2 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Hari Biasa,3,6.0,discount,density,"Lokasi: 3 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Hari Biasa,4,6.0,discount,density,"Lokasi: 4 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Hari Biasa,5,6.0,discount,density,"Lokasi: 5 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Hari Biasa,6,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,7,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,8,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,9,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,10,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,11,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,12,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,13,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,14,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Hari Biasa,15,0.0,discount,density,"Lokasi: 15 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Hari Biasa,16,0.0,discount,density,"Lokasi: 16 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Hari Biasa,17,0.0,discount,density,"Lokasi: 17 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Hari Biasa,18,0.0,discount,density,"Lokasi: 18 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Hari Biasa,19,0.0,discount,density,"Lokasi: 19 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Hari Biasa,20,0.0,discount,density,"Lokasi: 20 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Akhir Pekan,0,1.0,discount,density,"Lokasi: 0 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Akhir Pekan,1,1.0,discount,density,"Lokasi: 1 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Akhir Pekan,2,1.0,discount,density,"Lokasi: 2 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Akhir Pekan,3,1.0,discount,density,"Lokasi: 3 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Akhir Pekan,4,1.0,discount,density,"Lokasi: 4 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Akhir Pekan,5,1.0,discount,density,"Lokasi: 5 tempat wisata di sekitar — area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan."
+Clouds,Akhir Pekan,6,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,7,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,8,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,9,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,10,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,11,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,12,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,13,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,14,0.0,discount,weather,Cuaca: Berawan — wisata diprediksi ramai karena cuaca nyaman.
+Clouds,Akhir Pekan,15,0.0,discount,density,"Lokasi: 15 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Akhir Pekan,16,0.0,discount,density,"Lokasi: 16 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Akhir Pekan,17,0.0,discount,density,"Lokasi: 17 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Akhir Pekan,18,0.0,discount,density,"Lokasi: 18 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Akhir Pekan,19,0.0,discount,density,"Lokasi: 19 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Akhir Pekan,20,0.0,discount,density,"Lokasi: 20 tempat wisata di sekitar — area padat tempat wisata, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,0,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,1,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,2,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,3,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,4,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,5,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,6,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,7,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,8,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,9,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,10,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,11,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,12,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,13,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,14,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,15,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,16,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,17,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,18,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,19,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Clouds,Hari Libur Nasional,20,0.0,discount,calendar,"Kalender: (contoh) Hari Libur Nasional — hari libur nasional, permintaan diprediksi tinggi."
+Rain,Hari Biasa,0,21.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,1,21.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,2,21.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,3,21.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,4,21.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,5,21.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,6,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,7,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,8,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,9,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,10,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,11,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,12,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,13,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,14,15.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,15,7.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,16,7.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,17,7.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,18,7.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,19,7.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Biasa,20,7.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,0,16.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,1,16.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,2,16.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,3,16.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,4,16.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,5,16.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,6,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,7,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,8,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,9,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,10,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,11,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,12,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,13,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,14,10.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,15,2.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,16,2.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,17,2.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,18,2.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,19,2.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Akhir Pekan,20,2.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,0,11.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,1,11.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,2,11.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,3,11.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,4,11.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,5,11.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,6,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,7,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,8,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,9,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,10,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,11,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,12,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,13,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,14,5.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,15,0.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,16,0.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,17,0.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,18,0.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,19,0.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
+Rain,Hari Libur Nasional,20,0.0,discount,weather,Cuaca: Hujan sedang — berpotensi mengurangi wisatawan.
