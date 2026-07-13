@@ -149,7 +149,7 @@ def _calendar_contribution(calendar: CalendarSignal) -> InputContribution:
     return InputContribution("calendar", Decimal(points), fragment)
 
 
-def _density_contribution(density: DensitySignal) -> InputContribution:
+def _density_contribution(density: DensitySignal, location_label: Optional[str] = None) -> InputContribution:
     n = density.nearby_count
     if n >= DENSITY_HIGH_THRESHOLD:
         points, clause = -8, "area padat tempat wisata, permintaan diprediksi tinggi"
@@ -157,7 +157,11 @@ def _density_contribution(density: DensitySignal) -> InputContribution:
         points, clause = 6, "area sepi tempat wisata, promo ditingkatkan untuk menarik wisatawan"
     else:
         points, clause = 0, "kepadatan lokasi normal"
-    fragment = f"Lokasi: {n} tempat wisata di sekitar — {clause}."
+    # Names the actual resolved place, not just a bare count, so a merchant
+    # can independently check the claim against their own address instead of
+    # trusting an opaque number -- see app/geocoding.py's GeocodeResult.label.
+    where = f"{location_label} — " if location_label else ""
+    fragment = f"Lokasi: {where}{n} tempat wisata di sekitar — {clause}."
     return InputContribution("density", Decimal(points), fragment)
 
 
@@ -167,11 +171,12 @@ def compute_recommendation(
     weather: WeatherSignal,
     density: DensitySignal,
     calendar: CalendarSignal,
+    location_label: Optional[str] = None,
 ) -> WeightingResult:
     contributions = [
         _weather_contribution(weather),
         _calendar_contribution(calendar),
-        _density_contribution(density),
+        _density_contribution(density, location_label),
     ]
 
     discount_pct = BASE_DISCOUNT_PCT + sum((c.points for c in contributions), Decimal(0))
@@ -211,9 +216,10 @@ def generate_recommendation(
     hpp: Decimal,
     lat: float,
     lon: float,
+    location_label: Optional[str] = None,
     on_date: Optional[date] = None,
 ) -> WeightingResult:
     weather = fetch_weather(lat, lon)
     density = fetch_density(lat, lon)
     calendar = check_calendar(on_date or date.today())
-    return compute_recommendation(listed_price, hpp, weather, density, calendar)
+    return compute_recommendation(listed_price, hpp, weather, density, calendar, location_label)

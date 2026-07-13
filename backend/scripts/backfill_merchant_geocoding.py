@@ -21,14 +21,15 @@ def main():
         return
 
     for merchant in merchants:
-        coords = geocode_location(merchant.location)
+        geocoded = geocode_location(merchant.location)
         before = (merchant.latitude, merchant.longitude)
-        if coords:
-            merchant.latitude, merchant.longitude = coords
+        if geocoded:
+            merchant.latitude, merchant.longitude, merchant.geocoded_label = geocoded.lat, geocoded.lon, geocoded.label
             db.commit()
             print(
                 f"[ok] merchant id={merchant.id} business_name={merchant.business_name!r} "
-                f"location={merchant.location!r}: before={before} -> after=({merchant.latitude}, {merchant.longitude})"
+                f"location={merchant.location!r}: before={before} -> "
+                f"after=({merchant.latitude}, {merchant.longitude}, label={merchant.geocoded_label!r})"
             )
         else:
             print(

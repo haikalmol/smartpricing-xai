@@ -18,6 +18,7 @@ them in Aceh. The state check is what actually catches that; confidence is
 only a secondary filter.
 """
 import os
+from dataclasses import dataclass
 from typing import Optional
 
 import requests
@@ -29,8 +30,30 @@ ACEH_STATE_NAME = "aceh"
 MIN_CONFIDENCE = 0.5
 
 
-def geocode_location(location_text: str) -> Optional[tuple[float, float]]:
-    """Resolve free-text merchant.location to (lat, lon).
+@dataclass
+class GeocodeResult:
+    lat: float
+    lon: float
+    # Short, human-readable area Geoapify actually resolved the text to (e.g.
+    # "Punge Ujong, Banda Aceh") -- stored alongside lat/lon so a
+    # recommendation's rationale can name the real place it's computed
+    # against instead of a bare coordinate pair. An explanation a merchant
+    # can't independently check against their own address isn't really an
+    # explanation -- same principle as citing exactly which SHAP feature
+    # drove a figure instead of a vague "the model decided."
+    label: str
+
+
+def _label_from_result(top: dict) -> str:
+    area = top.get("suburb") or top.get("district")
+    city = top.get("city")
+    if area and city:
+        return f"{area}, {city}"
+    return city or top.get("formatted", "")
+
+
+def geocode_location(location_text: str) -> Optional[GeocodeResult]:
+    """Resolve free-text merchant.location to a GeocodeResult.
 
     Returns None if it can't be resolved with confidence -- no match, a
     low-confidence match, or a top match outside Aceh (almost always a sign
@@ -62,4 +85,4 @@ def geocode_location(location_text: str) -> Optional[tuple[float, float]]:
     if confidence < MIN_CONFIDENCE or state != ACEH_STATE_NAME:
         return None
 
-    return top["lat"], top["lon"]
+    return GeocodeResult(lat=top["lat"], lon=top["lon"], label=_label_from_result(top))

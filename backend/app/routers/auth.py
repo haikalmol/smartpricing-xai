@@ -13,13 +13,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenOut, status_code=201)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    coords = geocode_location(payload.location)
+    geocoded = geocode_location(payload.location)
     merchant = Merchant(
         name=payload.name,
         business_name=payload.business_name,
         location=payload.location,
-        latitude=coords[0] if coords else None,
-        longitude=coords[1] if coords else None,
+        latitude=geocoded.lat if geocoded else None,
+        longitude=geocoded.lon if geocoded else None,
+        geocoded_label=geocoded.label if geocoded else None,
         email=payload.email.lower(),
         password_hash=hash_password(payload.password),
     )

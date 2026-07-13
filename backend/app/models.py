@@ -22,6 +22,11 @@ class Merchant(Base):
     # run when either is null instead of guessing.
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    # Human-readable area Geoapify resolved `location` to (e.g. "Punge Ujong,
+    # Banda Aceh") -- set together with latitude/longitude, never on its own.
+    # Threaded into recommendation rationale_text so a merchant can see, and
+    # independently check, which real place a suggestion was computed against.
+    geocoded_label = Column(String, nullable=True)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     # Soft-delete: mirrors Service.is_active. Deleting an account preserves

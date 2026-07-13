@@ -38,7 +38,11 @@ def current_recommendation(
                 detail="Lokasi usaha belum dapat dipetakan, mohon perjelas alamat Anda di halaman Akun.",
             )
         result = generate_recommendation(
-            service.listed_price, service.hpp, current_merchant.latitude, current_merchant.longitude
+            service.listed_price,
+            service.hpp,
+            current_merchant.latitude,
+            current_merchant.longitude,
+            current_merchant.geocoded_label,
         )
         recommendation = build_recommendation(
             service_id=service.id,

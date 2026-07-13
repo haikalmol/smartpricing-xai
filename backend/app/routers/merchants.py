@@ -24,9 +24,10 @@ def update_my_merchant(
     # Only re-geocode if the location text actually changed -- re-submitting
     # the same profile (e.g. just editing name) shouldn't burn a Geoapify call.
     if payload.location != current_merchant.location:
-        coords = geocode_location(payload.location)
-        current_merchant.latitude = coords[0] if coords else None
-        current_merchant.longitude = coords[1] if coords else None
+        geocoded = geocode_location(payload.location)
+        current_merchant.latitude = geocoded.lat if geocoded else None
+        current_merchant.longitude = geocoded.lon if geocoded else None
+        current_merchant.geocoded_label = geocoded.label if geocoded else None
     current_merchant.name = payload.name
     current_merchant.business_name = payload.business_name
     current_merchant.location = payload.location
