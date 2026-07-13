@@ -12,3 +12,8 @@ matplotlib
 seaborn
 kaggle
 joblib
+# For analyze_production_data.py's read-only reuse of backend/app's
+# SQLAlchemy models/session -- not part of the ML pipeline itself.
+sqlalchemy
+python-dotenv
+psycopg2-binary
