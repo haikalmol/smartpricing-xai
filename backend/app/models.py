@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -14,6 +14,14 @@ class Merchant(Base):
     name = Column(String, nullable=False)
     business_name = Column(String, nullable=False)
     location = Column(String, nullable=False)
+    # Geocoded from `location` via Geoapify (app/geocoding.py) at registration
+    # and whenever location changes -- never on every recommendation request,
+    # see that module's docstring. Nullable: a location that fails to geocode
+    # (typo, ambiguous address) must NOT fall back to a default coordinate --
+    # that's the exact bug this replaces. current_recommendation() refuses to
+    # run when either is null instead of guessing.
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     # Soft-delete: mirrors Service.is_active. Deleting an account preserves

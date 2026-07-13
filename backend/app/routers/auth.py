@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_merchant, hash_password, verify_password
 from app.database import get_db
+from app.geocoding import geocode_location
 from app.models import Merchant
 from app.schemas import LoginRequest, RegisterRequest, TokenOut
 
@@ -12,10 +13,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenOut, status_code=201)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    coords = geocode_location(payload.location)
     merchant = Merchant(
         name=payload.name,
         business_name=payload.business_name,
         location=payload.location,
+        latitude=coords[0] if coords else None,
+        longitude=coords[1] if coords else None,
         email=payload.email.lower(),
         password_hash=hash_password(payload.password),
     )

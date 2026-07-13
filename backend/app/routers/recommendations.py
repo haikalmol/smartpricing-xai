@@ -12,12 +12,6 @@ from app.schemas import PendingRecommendationOut, RecommendationOut, Recommendat
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
-# TODO: merchant.location (CLAUDE.md data model) is free text, no lat/lon yet.
-# Using a fixed Banda Aceh centroid until geocoding (Geoapify) or dedicated
-# lat/lon columns are added to merchant.
-DEFAULT_LAT = 5.5483
-DEFAULT_LON = 95.3238
-
 
 @router.get("/current", response_model=RecommendationOut)
 def current_recommendation(
@@ -36,7 +30,16 @@ def current_recommendation(
         .first()
     )
     if recommendation is None:
-        result = generate_recommendation(service.listed_price, service.hpp, DEFAULT_LAT, DEFAULT_LON)
+        # A recommendation computed against a guessed/default location is the
+        # same bug as always using Banda Aceh's centroid -- refuse instead.
+        if current_merchant.latitude is None or current_merchant.longitude is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Lokasi usaha belum dapat dipetakan, mohon perjelas alamat Anda di halaman Akun.",
+            )
+        result = generate_recommendation(
+            service.listed_price, service.hpp, current_merchant.latitude, current_merchant.longitude
+        )
         recommendation = build_recommendation(
             service_id=service.id,
             hpp=service.hpp,
