@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_merchant
 from app.database import get_db
 from app.maps_link import parse_maps_link
-from app.models import Merchant
+from app.models import Merchant, Recommendation, RecommendationStatus, Service
 from app.schemas import MerchantOut, MerchantUpdate
 
 router = APIRouter(prefix="/merchants", tags=["merchants"])
@@ -40,6 +40,20 @@ def update_my_merchant(
         # present; otherwise the label falls back to the merchant's own
         # free-text location rather than being left stale from a prior link.
         current_merchant.geocoded_label = parsed.place_name or payload.location
+
+        # A confirmed new location makes any still-PENDING recommendation
+        # stale -- it was computed against the old/missing coordinates, and
+        # current_recommendation() only generates a fresh one when none is
+        # pending, so without this a merchant who fixes their location keeps
+        # seeing an unrelated old suggestion indefinitely. Only pending rows
+        # are touched -- approved/rejected recommendations are a merchant's
+        # already-logged decision (CLAUDE.md) and must never be deleted.
+        db.query(Recommendation).filter(
+            Recommendation.service_id.in_(
+                db.query(Service.id).filter(Service.merchant_id == current_merchant.id)
+            ),
+            Recommendation.status == RecommendationStatus.pending,
+        ).delete(synchronize_session=False)
 
     current_merchant.name = payload.name
     current_merchant.business_name = payload.business_name
