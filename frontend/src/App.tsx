@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Bell,
   ChevronDown,
@@ -107,6 +107,25 @@ function Screen({ children }: { children: React.ReactNode }) {
   return (
     <div className={`flex flex-col flex-1 min-h-0 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}>
       {children}
+    </div>
+  );
+}
+
+// ─── Cold-start loading (Render free tier sleeps after 15min idle, ~30-60s
+// to wake -- CLAUDE.md Stage K). Shown only on the very first load after the
+// app mounts, not on every subsequent refetch, so it doesn't flash on top of
+// routine loading spinners elsewhere in the app. ────────────────────────────
+function ColdStartScreen() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-3 min-h-screen">
+      <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center animate-pulse">
+        <Sparkles size={22} className="text-white" />
+      </div>
+      <p className="text-[14px] font-semibold text-foreground">Menyiapkan sistem...</p>
+      <p className="text-[12.5px] text-muted-foreground max-w-[260px]">
+        Server sedang aktif kembali setelah tidak digunakan. Proses ini bisa memakan waktu
+        hingga 1 menit pada percobaan pertama.
+      </p>
     </div>
   );
 }
@@ -1540,6 +1559,11 @@ function AuthScreen({ onAuthed }: { onAuthed: (token: string, merchant: Merchant
         >
           {submitting ? "Memproses..." : mode === "login" ? "Masuk" : "Daftar"}
         </button>
+        {submitting && (
+          <p className="text-[11.5px] text-muted-foreground text-center -mt-2">
+            Bisa memakan waktu hingga 1 menit jika server baru aktif kembali.
+          </p>
+        )}
       </div>
     </Screen>
   );
@@ -1556,6 +1580,9 @@ export default function App() {
   const [servicesError, setServicesError] = useState<string | null>(null);
   const [hppFocusServiceId, setHppFocusServiceId] = useState<number | null>(null);
   const [notifOn, setNotifOn] = useState(true);
+  // Ref, not state: flips once the first loadServices() call completes and
+  // must never trigger a re-render itself -- only servicesLoading does that.
+  const hasLoadedOnce = useRef(false);
 
   const loadServices = () => {
     setServicesLoading(true);
@@ -1563,7 +1590,10 @@ export default function App() {
     fetchServices()
       .then(setServices)
       .catch((err: Error) => setServicesError(err.message))
-      .finally(() => setServicesLoading(false));
+      .finally(() => {
+        setServicesLoading(false);
+        hasLoadedOnce.current = true;
+      });
   };
 
   useEffect(() => {
@@ -1594,6 +1624,13 @@ export default function App() {
 
   if (!authToken) {
     return <AuthScreen onAuthed={handleAuthed} />;
+  }
+
+  // Only the very first load ever shows the cold-start explainer -- every
+  // later reload (a retry button, editing HPP, etc.) falls through to the
+  // existing per-screen loading/error states instead.
+  if (servicesLoading && !hasLoadedOnce.current) {
+    return <ColdStartScreen />;
   }
 
   const showBottomNav = activeTab !== "input";
