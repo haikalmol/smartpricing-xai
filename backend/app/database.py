@@ -1,5 +1,5 @@
 import os
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, unquote, urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -14,11 +14,39 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 load_dotenv()
 
 
+def _reencode_credentials(url: str) -> str:
+    """Percent-encode the user:password portion of a directly-set DATABASE_URL.
+
+    H15 assumed a directly-set DATABASE_URL always arrives pre-encoded (true
+    when a platform injects it) -- false when it's a Supabase connection URI
+    pasted by hand into Render's dashboard (H15.2 production regression: an
+    unescaped password character broke host parsing, identical to the bug
+    the split DB_USER/DB_PASSWORD path already guards against below).
+
+    Decode-then-encode so this is safe whether the credentials arrive raw
+    or already percent-encoded -- idempotent either way, so it can't corrupt
+    a value that happened to already be correct.
+    """
+    parts = urlsplit(url)
+    if "@" not in parts.netloc:
+        return url  # no credentials in the URL at all -- nothing to fix
+
+    userinfo, _, hostport = parts.netloc.rpartition("@")
+    if ":" not in userinfo:
+        return url  # no password portion -- nothing to re-encode
+
+    user, _, password = userinfo.partition(":")
+    safe_userinfo = f"{quote_plus(unquote(user))}:{quote_plus(unquote(password))}"
+    return urlunsplit((parts.scheme, f"{safe_userinfo}@{hostport}", parts.path, parts.query, parts.fragment))
+
+
 def _build_database_url() -> str:
-    # DATABASE_URL set directly (e.g. Render/Railway inject this at deploy time,
-    # already URL-encoded by the platform) takes precedence over the split vars.
+    # DATABASE_URL set directly (Render/Railway env var, or a Supabase URI
+    # pasted by hand) takes precedence over the split vars -- but its
+    # credentials get the same re-encoding treatment as the split-var path,
+    # not trusted as already-safe.
     if os.environ.get("DATABASE_URL"):
-        return os.environ["DATABASE_URL"]
+        return _reencode_credentials(os.environ["DATABASE_URL"])
 
     db_user = os.environ.get("DB_USER")
     db_password = os.environ.get("DB_PASSWORD")
